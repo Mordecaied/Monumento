@@ -1,0 +1,73 @@
+{
+  "project": "Monumento MVP",
+  "feature": "Session Tags",
+  "branch": "feature/session-tags",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "As a user, I want to add tags to my podcast sessions so that I can organize and categorize them",
+      "description": "Add a tags input field to the session creation form that allows users to add multiple tags to a session. Tags should be saved in the session metadata.",
+      "acceptanceCriteria": [
+        "Session creation form includes a tags input field below the existing fields",
+        "Users can add multiple tags by typing and pressing Enter or comma",
+        "Tags are visually represented as removable badges with the purple gradient theme",
+        "Tags are saved to session.metadata.tags as a string array",
+        "Backend SessionRequest DTO accepts tags in metadata",
+        "TypeScript type checking passes (npm run type-check)",
+        "Linting passes (npm run lint)"
+      ],
+      "status": "pending",
+      "priority": "medium",
+      "estimatedContextSize": "small",
+      "technicalNotes": "Use Tailwind CSS for tag badge styling. Store tags in existing metadata JSONB column. Follow existing VirtualStudio.tsx patterns for form inputs."
+    },
+    {
+      "id": "US-002",
+      "title": "As a user, I want to see tags displayed on session cards so that I can quickly identify session topics",
+      "description": "Display tags as colored badges on session cards in the HistoryView component",
+      "acceptanceCriteria": [
+        "Session cards in HistoryView display tags below session title",
+        "Tags use purple gradient badge styling consistent with design system",
+        "Tags are displayed in a flex-wrap layout to handle multiple tags",
+        "Maximum of 5 tags shown, with '+N more' indicator if there are additional tags",
+        "Clicking a tag does nothing (filtering will be added in US-003)",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "medium",
+      "estimatedContextSize": "small",
+      "technicalNotes": "Modify HistoryView.tsx and SessionCard component. Use existing badge components if available, or create reusable TagBadge component."
+    },
+    {
+      "id": "US-003",
+      "title": "As a user, I want to filter my session history by tag so that I can find related podcasts easily",
+      "description": "Add tag filtering capability to the HistoryView component",
+      "acceptanceCriteria": [
+        "HistoryView shows a tag filter dropdown/pills at the top",
+        "Clicking a tag in the filter or on a session card filters the list to show only sessions with that tag",
+        "Active filter is visually indicated (highlighted tag)",
+        "Clear filter button is available when a filter is active",
+        "Filter state persists during the session (but not across page reloads)",
+        "Filtering works client-side (no backend API changes needed)",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "low",
+      "estimatedContextSize": "medium",
+      "technicalNotes": "Use React state to manage active filter. Filter sessions client-side using sessions.filter(). Consider using existing HistoryView state management patterns."
+    }
+  ],
+  "technicalContext": {
+    "frontend": "React 19 + TypeScript + Tailwind CSS",
+    "backend": "Spring Boot 3.x + PostgreSQL",
+    "database": "PostgreSQL with JSONB metadata column",
+    "designSystem": "Purple gradient theme (see skills/ui-design.md)",
+    "specialNotes": "Backend runs via VS Code Spring Boot Console"
+  },
+  "qualityStandards": {
+    "typeChecking": "npm run type-check must pass",
+    "linting": "npm run lint must pass",
+    "testing": "Manual testing required, unit tests if time permits",
+    "documentation": "Update docs if new components are created"
+  }
+}

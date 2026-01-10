@@ -1,0 +1,13 @@
+{
+  "project": "Monumento MVP",
+  "techStack": ["React 19", "TypeScript", "Tailwind CSS", "Spring Boot 3.x", "PostgreSQL"],
+  "contextDocs": ["docs/CLAUDE.md", "docs/architecture/system-design.md"],
+  "skills": ["skills/ui-design.md"],
+  "specialNotes": "Backend runs via VS Code Spring Boot Console, not terminal",
+  "qualityGates": {
+    "typeCheck": true,
+    "linting": true,
+    "tests": true,
+    "backendCompilation": false
+  }
+}

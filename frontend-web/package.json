@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "lint": "echo 'Linting not configured yet'",
+    "ralph:init": "cd ../scripts/ralph && bash ralph.sh init",
+    "ralph:run": "cd ../scripts/ralph && bash ralph.sh run",
+    "ralph:status": "cd ../scripts/ralph && bash ralph.sh status"
   },
   "dependencies": {
     "@google/genai": "^1.34.0",

@@ -1,0 +1,46 @@
+{
+  "project": "Monumento MVP",
+  "feature": "Example Feature",
+  "branch": "feature/example-feature",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "As a user, I want to [do something] so that [benefit]",
+      "description": "Detailed description of the user story",
+      "acceptanceCriteria": [
+        "Given [context], when [action], then [expected result]",
+        "The feature works correctly with existing functionality",
+        "All quality checks pass (tests, type-checking, linting)"
+      ],
+      "status": "pending",
+      "priority": "high",
+      "estimatedContextSize": "small",
+      "technicalNotes": "Any technical considerations or constraints"
+    },
+    {
+      "id": "US-002",
+      "title": "As a developer, I want to [improve something] so that [benefit]",
+      "description": "Another user story example",
+      "acceptanceCriteria": [
+        "Code follows existing patterns in the codebase",
+        "Documentation is updated if needed",
+        "No regressions in existing features"
+      ],
+      "status": "pending",
+      "priority": "medium",
+      "estimatedContextSize": "medium"
+    }
+  ],
+  "technicalContext": {
+    "frontend": "React 19 + TypeScript + Tailwind CSS",
+    "backend": "Spring Boot 3.x + PostgreSQL",
+    "apiIntegration": "Gemini AI, Replicate SadTalker",
+    "specialNotes": "Backend runs via VS Code Spring Boot Console"
+  },
+  "qualityStandards": {
+    "typeChecking": "npm run type-check must pass",
+    "linting": "npm run lint must pass",
+    "testing": "Unit tests for new functionality",
+    "documentation": "Update docs if architecture changes"
+  }
+}
