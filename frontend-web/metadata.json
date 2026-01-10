@@ -1,0 +1,8 @@
+{
+  "name": "Monumento",
+  "description": "A premium virtual video podcast studio featuring AI-hosted interviews, custom production modes, and real-time transcript editing.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

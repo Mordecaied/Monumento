@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: monumento-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: monumento
+      POSTGRES_USER: monumento_user
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U monumento_user -d monumento"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: monumento-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Backend API (optional - uncomment to run backend in Docker)
+  # backend:
+  #   build:
+  #     context: ../../backend
+  #     dockerfile: Dockerfile
+  #   container_name: monumento-backend
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8080:8080"
+  #   env_file:
+  #     - ../../backend/.env
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   environment:
+  #     DATABASE_HOST: postgres
+  #     REDIS_HOST: redis
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: monumento-network

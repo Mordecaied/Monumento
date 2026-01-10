@@ -1,0 +1,9 @@
+{
+  "vibe": "The Historian",
+  "mode": "Auto-Pilot",
+  "durationMinutes": 15,
+  "metadata": {
+    "topics": ["family history", "childhood memories"],
+    "context": "Recording stories about grandparents"
+  }
+}
