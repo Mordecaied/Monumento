@@ -18,7 +18,8 @@
       "Bash(tee:*)",
       "Bash(cat:*)",
       "Bash(npm run type-check:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(npm install:*)"
     ]
   }
 }

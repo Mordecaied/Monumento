@@ -2,6 +2,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StudioVibe } from '../types/index';
 import { DEFAULT_BACKGROUNDS } from '../config/constants';
+import { BackgroundRemovalService } from '../services/backgroundRemoval';
+import { loadVirtualStudioBackground } from '../services/virtualStudios';
 
 interface VirtualStudioProps {
   vibe: StudioVibe;
@@ -14,7 +16,55 @@ interface VirtualStudioProps {
 const VirtualStudio: React.FC<VirtualStudioProps> = ({ vibe, customBackground, active, stream, onFrame }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const compositeCanvasRef = useRef<HTMLCanvasElement>(null);
+  const backgroundServiceRef = useRef<BackgroundRemovalService | null>(null);
+  const [fps, setFps] = useState<number>(0);
+  const [isModelLoading, setIsModelLoading] = useState(false);
+  const [useBackgroundRemoval, setUseBackgroundRemoval] = useState(true);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
+  // Initialize background removal service
+  useEffect(() => {
+    if (!useBackgroundRemoval) return;
+
+    const initService = async () => {
+      try {
+        setIsModelLoading(true);
+        console.log('[VirtualStudio] Initializing background removal...');
+
+        const service = new BackgroundRemovalService({
+          outputStride: 16,
+          segmentationThreshold: 0.6,
+          edgeBlur: 3
+        });
+
+        await service.initialize();
+
+        // Load virtual studio background
+        const backgroundUrl = customBackground || await loadVirtualStudioBackground(vibe);
+        await service.setBackgroundImage(backgroundUrl);
+
+        backgroundServiceRef.current = service;
+        console.log('[VirtualStudio] Background removal ready');
+        setIsModelLoading(false);
+      } catch (error) {
+        console.error('[VirtualStudio] Failed to initialize background removal:', error);
+        setUseBackgroundRemoval(false); // Fallback to blur
+        setIsModelLoading(false);
+      }
+    };
+
+    initService();
+
+    return () => {
+      if (backgroundServiceRef.current) {
+        backgroundServiceRef.current.dispose();
+        backgroundServiceRef.current = null;
+      }
+    };
+  }, [vibe, customBackground, useBackgroundRemoval]);
+
+  // Setup video stream
   useEffect(() => {
     if (active && stream && videoRef.current) {
       videoRef.current.srcObject = stream;
@@ -23,13 +73,66 @@ const VirtualStudio: React.FC<VirtualStudioProps> = ({ vibe, customBackground, a
     }
   }, [active, stream]);
 
+  // Process video frames with background removal
+  useEffect(() => {
+    if (!active || !stream || !videoRef.current || !compositeCanvasRef.current) {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
+      return;
+    }
+
+    const processFrames = async () => {
+      const video = videoRef.current!;
+      const canvas = compositeCanvasRef.current!;
+
+      if (useBackgroundRemoval && backgroundServiceRef.current) {
+        // Use TensorFlow.js background removal
+        const cleanup = await backgroundServiceRef.current.processStreamToCanvas(
+          video,
+          canvas,
+          (currentFps) => setFps(currentFps)
+        );
+        cleanupRef.current = cleanup;
+      } else {
+        // Fallback: simple blur effect
+        const ctx = canvas.getContext('2d')!;
+        const processLoop = () => {
+          if (video.readyState >= 2) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.filter = 'blur(10px)';
+            ctx.drawImage(video, 0, 0);
+            ctx.filter = 'none';
+          }
+          requestAnimationFrame(processLoop);
+        };
+        processLoop();
+      }
+    };
+
+    processFrames();
+
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
+    };
+  }, [active, stream, useBackgroundRemoval]);
+
+  // Send frames to Gemini for vision analysis
   useEffect(() => {
     if (!onFrame || !active || !stream) return;
     const interval = setInterval(() => {
-      if (videoRef.current && canvasRef.current && videoRef.current.readyState >= 2) {
+      if (canvasRef.current && compositeCanvasRef.current && compositeCanvasRef.current.width > 0) {
+        // Use composite canvas (with background removed) for Gemini frames
         const ctx = canvasRef.current.getContext('2d');
         if (ctx) {
-          ctx.drawImage(videoRef.current, 0, 0, 400, 225);
+          canvasRef.current.width = 400;
+          canvasRef.current.height = 225;
+          ctx.drawImage(compositeCanvasRef.current, 0, 0, 400, 225);
           const base64 = canvasRef.current.toDataURL('image/jpeg', 0.6).split(',')[1];
           onFrame(base64);
         }
@@ -42,26 +145,36 @@ const VirtualStudio: React.FC<VirtualStudioProps> = ({ vibe, customBackground, a
 
   return (
     <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-black border border-white/10">
-      <div 
-        className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
-        style={{ backgroundImage: `url(${bgUrl})` }}
-      >
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-[4px]" />
-      </div>
+      {/* Hidden video element for source */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        className="hidden"
+      />
 
+      {/* Composite canvas with background removal applied */}
       <div className="absolute inset-0 flex items-center justify-center">
         {active && stream ? (
-          <video 
-            ref={videoRef} 
-            autoPlay 
-            muted 
-            playsInline 
-            className="h-full w-full object-cover scale-x-[-1]"
-            style={{
-              maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)'
-            }}
-          />
+          <>
+            {isModelLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
+                <div className="text-center space-y-4">
+                  <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto" />
+                  <span className="text-xs font-black uppercase tracking-widest text-purple-400">Loading Background AI...</span>
+                </div>
+              </div>
+            )}
+            <canvas
+              ref={compositeCanvasRef}
+              className="h-full w-full object-cover scale-x-[-1]"
+              style={{
+                maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)'
+              }}
+            />
+          </>
         ) : (
           <div className="flex flex-col items-center gap-4 text-white/20">
             <div className="w-20 h-20 rounded-full border-2 border-current flex items-center justify-center">
@@ -72,13 +185,29 @@ const VirtualStudio: React.FC<VirtualStudioProps> = ({ vibe, customBackground, a
         )}
       </div>
 
+      {/* Hidden canvas for Gemini frame export */}
       <canvas ref={canvasRef} width="400" height="225" className="hidden" />
 
-      {/* Watermarks removed as requested for a cleaner broadcast aesthetic */}
+      {/* Live indicator with FPS counter */}
       {active && (
         <div className="absolute top-6 left-6 px-4 py-2 rounded-full glass-panel flex items-center gap-3 z-20 border border-white/10 shadow-xl">
           <div className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
           <span className="text-[9px] font-black tracking-widest uppercase">Live Broadcast</span>
+          {useBackgroundRemoval && fps > 0 && (
+            <span className="text-[8px] font-bold text-emerald-400">{fps.toFixed(0)} FPS</span>
+          )}
+        </div>
+      )}
+
+      {/* Background removal toggle (dev tool) */}
+      {active && (
+        <div className="absolute bottom-6 right-6 z-20">
+          <button
+            onClick={() => setUseBackgroundRemoval(!useBackgroundRemoval)}
+            className="px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-[8px] font-black uppercase tracking-wider text-white/60 hover:text-white/90 hover:border-white/30 transition-all"
+          >
+            {useBackgroundRemoval ? '🎭 Virtual Studio' : '💨 Blur Mode'}
+          </button>
         </div>
       )}
     </div>
