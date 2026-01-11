@@ -7,6 +7,7 @@ import HistoryView from './components/HistoryView';
 import SessionDetail from './components/SessionDetail';
 import DirectorControls from './components/DirectorControls';
 import AuthScreen from './components/AuthScreen';
+import ContentShareModal from './components/ContentShareModal';
 import { useAuth } from './contexts/AuthContext';
 import { GeminiSession } from './services/geminiService';
 import * as sessionService from './lib/api/session.service';
@@ -48,6 +49,8 @@ const App: React.FC = () => {
   const [isGuestTalking, setIsGuestTalking] = useState(false);
   const [countdown, setCountdown] = useState<number | string>(3);
   const [productionProgress, setProductionProgress] = useState(0);
+  const [isContentShareOpen, setIsContentShareOpen] = useState(false);
+  const [isPausedForUpload, setIsPausedForUpload] = useState(false);
   const [productionStep, setProductionStep] = useState('');
   const [sessionStartTime, setSessionStartTime] = useState<number>(0);
   
@@ -309,6 +312,52 @@ const App: React.FC = () => {
     }, 20);
   };
 
+  const handleShareContent = async (file: File, type: 'image' | 'document' | 'video' | 'audio') => {
+    // Pause recording
+    setIsPausedForUpload(true);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.pause();
+    }
+
+    try {
+      // Create FormData for upload
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', type);
+      formData.append('timestamp', String(Date.now() - sessionStartTime));
+
+      // TODO: Upload to backend (will be implemented in US-002)
+      console.log('Uploading content:', file.name, type);
+
+      // For now, store in message metadata
+      const currentTimestamp = Date.now() - sessionStartTime;
+      const newMessage: Message = {
+        role: 'user',
+        text: `[Shared ${type}: ${file.name}]`,
+        timestamp: Date.now(),
+        relativeOffset: currentTimestamp,
+        duration: 0,
+        metadata: {
+          attachmentType: type,
+          attachmentName: file.name,
+          attachmentSize: file.size,
+          attachmentTimestamp: currentTimestamp
+        }
+      };
+
+      setMessages(prev => [...prev, newMessage]);
+
+    } catch (error) {
+      console.error('Failed to share content:', error);
+    } finally {
+      // Resume recording
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+        mediaRecorderRef.current.resume();
+      }
+      setIsPausedForUpload(false);
+    }
+  };
+
   const generatePlainTextTranscript = (msgs: Message[]) => {
     return msgs.map(m => {
       const speaker = m.role === 'ai' ? 'HOST' : 'GUEST';
@@ -500,9 +549,21 @@ https://monumento.app
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-red-600 animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.8)]" />
               <span className="text-xs font-black uppercase tracking-[0.2em] text-white/90">Studio 01 • BROADCASTING</span>
+              {isPausedForUpload && (
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-yellow-400 animate-pulse">⏸ PAUSED FOR UPLOAD</span>
+              )}
             </div>
           </div>
-          <button onClick={handleEndSession} className="px-8 py-2.5 bg-red-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-500 transition-all shadow-xl shadow-red-900/20 active:scale-95">Wrap Session</button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsContentShareOpen(true)}
+              className="px-6 py-2.5 bg-purple-600/20 border border-purple-500/30 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-purple-600/30 hover:border-purple-500/50 transition-all shadow-xl shadow-purple-900/20 active:scale-95 flex items-center gap-2"
+            >
+              <span>📤</span>
+              <span>Share Content</span>
+            </button>
+            <button onClick={handleEndSession} className="px-8 py-2.5 bg-red-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-500 transition-all shadow-xl shadow-red-900/20 active:scale-95">Wrap Session</button>
+          </div>
         </header>
 
         <main className="flex-1 grid grid-cols-12 gap-0 overflow-hidden">
@@ -558,6 +619,12 @@ https://monumento.app
              </div>
           </div>
         </main>
+
+        <ContentShareModal
+          isOpen={isContentShareOpen}
+          onClose={() => setIsContentShareOpen(false)}
+          onShare={handleShareContent}
+        />
       </div>
     );
   }

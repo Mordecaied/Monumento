@@ -1,0 +1,299 @@
+{
+  "project": "Monumento MVP",
+  "feature": "Automated Professional Video Composition",
+  "branch": "feature/automated-video-composition",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "As a user, I want to share visual content during recording so that my podcast can reference documents, images, and videos",
+      "description": "Add UI button in recording view that allows users to upload and share images, documents, audio, or video files during the podcast session. Content sharing triggers automatic layout changes.",
+      "acceptanceCriteria": [
+        "Recording view shows 'Share Content' button with dropdown menu (Upload Image, Upload Document, Upload Video, Share Screen)",
+        "Clicking share temporarily pauses recording to upload content",
+        "Uploaded content is associated with current message timestamp",
+        "Content appears in video composition immediately after upload",
+        "Backend stores attachment URL and metadata in message.metadata",
+        "TypeScript type checking passes (npm run type-check)",
+        "Linting passes (npm run lint)"
+      ],
+      "status": "pending",
+      "priority": "high",
+      "estimatedContextSize": "medium",
+      "technicalNotes": "Files: App.tsx (add share button near line 520), create ContentShareModal.tsx. Backend: extend Message.java with attachment fields, create V7 migration for attachment_type, attachment_url, attachment_metadata columns."
+    },
+    {
+      "id": "US-002",
+      "title": "As a user, I want virtual studio backgrounds applied to create a professional same-studio effect",
+      "description": "Implement real-time background removal for guest webcam and apply matching virtual studio backgrounds to both guest and AI host, creating the illusion they are in the same professional studio.",
+      "acceptanceCriteria": [
+        "Background removal applied to guest webcam using TensorFlow.js BodyPix or MediaPipe",
+        "Virtual studio background images loaded based on selected vibe (historian=library, journalist=news desk, etc.)",
+        "Guest and host display same studio background for unified look",
+        "Background processing runs at 30 FPS without noticeable lag",
+        "Fallback to blur effect if background removal fails or performs poorly",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "high",
+      "estimatedContextSize": "large",
+      "technicalNotes": "Create backgroundRemoval.ts service using @tensorflow/tfjs and BodyPix model. Add virtual-studios/ asset directory with 15-20 high-res backgrounds. Modify App.tsx video capture pipeline (lines 154-171) to process through background removal before MediaRecorder. Performance target: <50ms per frame."
+    },
+    {
+      "id": "US-003",
+      "title": "As a user, I want the video layout to automatically switch when I share content so that documents/images are clearly visible",
+      "description": "Implement dynamic layout switching that changes from default 3-column grid to picture-in-picture mode when content is shared, making shared content dominant while keeping speakers visible in small windows.",
+      "acceptanceCriteria": [
+        "Default layout: Host (col-4) | Transcript (col-4) | Guest (col-4)",
+        "Content shared layout: Guest+Host PiP (col-3) | Shared Content (col-9)",
+        "Screen share layout: Full screen content with both speakers as small PiP overlays",
+        "Layout switches smoothly with 300ms fade transition",
+        "Layout change is recorded in message metadata with timestamp",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "high",
+      "estimatedContextSize": "medium",
+      "technicalNotes": "Modify App.tsx recording grid (lines 508-560) to support 3 layout modes. Create LayoutManager.ts to handle switching logic. Store layout events in message.metadata.compositionEvents array. Use CSS transitions for smooth changes."
+    },
+    {
+      "id": "US-004",
+      "title": "As a user, I want the camera to automatically focus on whoever is speaking so that viewers always see the active speaker",
+      "description": "Implement intelligent active speaker detection using audio analysis and automatically switch camera view to show the person who is currently talking, with smooth transitions.",
+      "acceptanceCriteria": [
+        "Audio volume analysis detects active speaker (guest vs host)",
+        "Hysteresis applied: 500ms of sustained speech before switching to prevent flickering",
+        "Camera view smoothly transitions to active speaker with 300ms fade",
+        "Maintains previous view during overlapping speech or silence",
+        "Camera switch events logged in metadata with timestamps and confidence scores",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "medium",
+      "estimatedContextSize": "medium",
+      "technicalNotes": "Create cameraSwitcher.ts service. Enhance existing volume analysis (App.tsx lines 140-150) with hysteresis and confidence scoring. Add sustained duration tracking. Record switches in message.metadata.compositionEvents."
+    },
+    {
+      "id": "US-005",
+      "title": "As a user, I want the camera to automatically zoom during key moments so that important statements have visual emphasis",
+      "description": "Implement AI-powered detection of key moments (emotional peaks, important insights, emphasis) and automatically apply subtle zoom effects to the active speaker's camera for emphasis.",
+      "acceptanceCriteria": [
+        "Gemini AI analyzes transcript in real-time to detect key moments (revelations, emotional peaks, main points)",
+        "Zoom levels: Subtle (1.15x), Medium (1.3x), Close-up (1.5x) based on moment importance",
+        "Zoom animation uses smooth 800ms cubic-bezier transition",
+        "Zoom events logged in metadata with timestamp, level, and reason",
+        "Manual zoom override available via keyboard shortcut (optional)",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "low",
+      "estimatedContextSize": "medium",
+      "technicalNotes": "Create emphasisDetector.ts using Gemini API to analyze transcript segments every 2-3 seconds. Apply CSS transform: scale() with smooth transitions. Store zoom events in metadata. Detectors: exclamation points, volume+pitch variation, AI-detected importance."
+    },
+    {
+      "id": "US-006",
+      "title": "As a user, I want smooth animated transitions between video segments so that the podcast feels professionally edited",
+      "description": "Add professional transition effects (fade, slide, zoom, wipe) when switching between speakers, showing content, or moving between topics/segments.",
+      "acceptanceCriteria": [
+        "Fade transition (300ms) for speaker switches",
+        "Slide transition (400ms) for content appearing/disappearing",
+        "Zoom transition (500ms) for topic changes",
+        "Wipe transition (350ms) for segment boundaries",
+        "Transitions use GPU-accelerated CSS animations",
+        "Transition events recorded in metadata",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "low",
+      "estimatedContextSize": "small",
+      "technicalNotes": "Create VideoTransitions.tsx component using React Transition Group. Implement CSS animation classes for each transition type. Apply transitions based on composition events (speaker change, content change, segment boundary). Use cubic-bezier easing for professional feel."
+    },
+    {
+      "id": "US-007",
+      "title": "As a user, I want all video composition events recorded so that the professional editing is preserved during replay",
+      "description": "Store comprehensive metadata about all composition events (layout changes, camera switches, zooms, transitions) so that replay sessions show the same professional composition as the original recording.",
+      "acceptanceCriteria": [
+        "Message metadata includes compositionEvents array with all events",
+        "Each event has: timestamp, type, details (e.g., from/to layout, zoom level, transition effect)",
+        "SessionDetail replay applies all composition events from metadata in sync with video playback",
+        "User can manually override camera angle during replay",
+        "Timeline visualization shows camera switches and layout changes as markers",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "medium",
+      "estimatedContextSize": "medium",
+      "technicalNotes": "Extend message.metadata with compositionEvents array. Modify SessionDetail.tsx (lines 317-516) to read and apply events during playback. Add timeline markers for visual feedback. Event types: layout_change, camera_switch, zoom, transition, content_shown, content_hidden."
+    },
+    {
+      "id": "US-008",
+      "title": "As a user, I want AI to detect when I'm discussing visual content so that the system can prompt me to share it",
+      "description": "Implement Gemini-powered content detection that analyzes conversation context and prompts the user to share content when phrases like 'look at this', 'this document', 'as shown in the image' are detected.",
+      "acceptanceCriteria": [
+        "Gemini analyzes last 30 seconds of transcript every 3 seconds",
+        "Detects keywords: 'look at', 'shown in', 'this document', 'this image', 'this video', 'on the screen'",
+        "Shows non-intrusive prompt: 'Would you like to share content? [Upload] [Dismiss]'",
+        "User can upload content immediately or dismiss prompt",
+        "Detection context and timestamp stored in attachment metadata",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "low",
+      "estimatedContextSize": "small",
+      "technicalNotes": "Create ContentDetectionService.java backend service using Gemini API. Frontend polls backend every 3 seconds with recent transcript. Show toast notification when content reference detected. Store detection in attachment_metadata.detectionContext field."
+    },
+    {
+      "id": "US-009",
+      "title": "As a user, I want picture-in-picture mode when showing content so that viewers can see both the content and the speakers",
+      "description": "When shared content (document, image, video) is displayed, automatically show speakers as small picture-in-picture windows overlaid on the content, maintaining visual connection with the conversation.",
+      "acceptanceCriteria": [
+        "Shared content takes dominant screen space (75-80%)",
+        "Guest and host appear as small PiP windows (150x100px each)",
+        "PiP windows positioned in bottom corners with slight padding",
+        "PiP windows show live video with matching virtual backgrounds",
+        "Active speaker PiP has subtle highlight border (purple gradient)",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "medium",
+      "estimatedContextSize": "small",
+      "technicalNotes": "Modify Layout B in App.tsx to render small video elements overlaid on content canvas. Use absolute positioning with z-index. Apply 2px border on active speaker PiP. Maintain aspect ratio for PiP windows."
+    },
+    {
+      "id": "US-010",
+      "title": "As a user, I want real-time video composition so that the final output is a single professional video file",
+      "description": "Implement video compositor service that combines all elements (virtual backgrounds, speakers, content, transitions, zooms) in real-time into a single output video stream for recording.",
+      "acceptanceCriteria": [
+        "Canvas-based compositor processes at 30 FPS minimum",
+        "Layers: virtual background, processed guest video, host video/animation, shared content, overlays",
+        "Compositor applies dynamic layout, camera switches, zooms, and transitions in real-time",
+        "Output stream is single MediaStream suitable for MediaRecorder",
+        "Performance: <50ms latency per frame (OffscreenCanvas if needed)",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "high",
+      "estimatedContextSize": "large",
+      "technicalNotes": "Create videoCompositor.ts service. Use Canvas API for frame-by-frame composition. Input streams: guest (with bg removal), host, shared content, audio mix. Output: composed canvas.captureStream(30) to MediaRecorder. Consider WebGL for GPU acceleration if performance issues."
+    },
+    {
+      "id": "US-011",
+      "title": "As a user, I want an enhanced timeline that shows composition events so that I can understand what happened during the session",
+      "description": "Add visual indicators on the session timeline showing where camera switches, layout changes, content was shared, and zoom effects occurred, making the composition history visible and interactive.",
+      "acceptanceCriteria": [
+        "Timeline displays markers for each composition event type with different colors/icons",
+        "Hovering marker shows tooltip: event type, timestamp, details",
+        "Clicking marker seeks video to that timestamp",
+        "Legend shows what each marker type represents",
+        "Events include: camera switches (blue), layout changes (green), zooms (orange), transitions (purple), content shown (yellow)",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "low",
+      "estimatedContextSize": "small",
+      "technicalNotes": "Modify SessionDetail.tsx timeline section (around lines 450-475). Add event markers using absolute positioning based on timestamp percentage. Use Tailwind colors for different event types. Add tooltip component on hover."
+    },
+    {
+      "id": "US-012",
+      "title": "As a user, I want a YouTube Stories-style segmented replay bar so that I can quickly navigate between conversation segments",
+      "description": "Enhance the existing segmented timeline with improved visual design using purple gradient theme, segment previews on hover, and smooth segment-to-segment navigation.",
+      "acceptanceCriteria": [
+        "Timeline segments use purple gradient (from-purple-500 to-purple-700) when active",
+        "Inactive segments show muted purple (bg-purple-900/30)",
+        "Hovering segment shows preview popup with message text and timestamp",
+        "Clicking segment jumps video to that message's start time",
+        "Segment width proportional to message duration",
+        "Smooth fade transition (150ms) between segments",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "high",
+      "estimatedContextSize": "small",
+      "technicalNotes": "Enhance existing SessionDetail.tsx timeline (lines 458-496). Already has segment structure, just needs improved styling and interactions. Add purple gradient for active segment, improve hover popup with better positioning and animations."
+    },
+    {
+      "id": "US-013",
+      "title": "As a user, I want composition event markers on the segmented timeline so that I can see where automated edits occurred",
+      "description": "Overlay small icons on timeline segments showing where composition events (camera switches, layout changes, zooms) occurred, providing visual feedback about automated editing activity.",
+      "acceptanceCriteria": [
+        "Camera switch events show blue camera icon above segment",
+        "Layout change events show green grid icon above segment",
+        "Zoom events show orange magnifier icon above segment",
+        "Transition events show purple arrow icon above segment",
+        "Content shown events show yellow document icon above segment",
+        "Icons positioned at percentage of segment duration matching event timestamp",
+        "Hovering icon shows tooltip with event details",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "medium",
+      "estimatedContextSize": "small",
+      "technicalNotes": "Extend SessionDetail.tsx timeline to render event markers from message.metadata.compositionEvents. Use absolute positioning within each segment. Create EventMarker.tsx component with icon library (lucide-react). Calculate icon position as: (eventTimestamp - messageStartTime) / messageDuration * segmentWidth."
+    },
+    {
+      "id": "US-014",
+      "title": "As a user, I want ultra-large subtitles with real-time word highlighting so that viewers can easily follow the conversation",
+      "description": "Replace current text-7xl subtitles with much larger text-9xl subtitles, and implement precise word-level highlighting synced to actual speech timing (not estimated), with emerald-400 green highlight and dramatic glow effects.",
+      "acceptanceCriteria": [
+        "Subtitle text size is text-8xl on mobile, text-9xl on desktop (larger than current text-7xl)",
+        "Active word shows emerald-400 color with scale-110 transform",
+        "Active word has dramatic glow: drop-shadow-[0_0_60px_rgba(52,211,153,1)]",
+        "Inactive words show text-white/10 with scale-95",
+        "Word highlighting uses precise timestamps from message.metadata.wordTimings (not estimated)",
+        "Transitions use duration-75 for snappy highlighting",
+        "Font weight 900 for active word, 800 for inactive",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "high",
+      "estimatedContextSize": "medium",
+      "technicalNotes": "Modify SessionDetail.tsx subtitle rendering (currently lines 435-446). Replace estimated word timing calculation (duration / wordCount) with precise message.metadata.wordTimings lookup. Increase text size from text-4xl/text-7xl to text-8xl/text-9xl. Enhance glow effects and transitions. Ensure wordTimings data exists before rendering."
+    },
+    {
+      "id": "US-015",
+      "title": "As a user, I want precise word-level timestamps captured during recording so that subtitle highlighting is perfectly synced",
+      "description": "Implement speech recognition with word-level timing during recording, storing precise start/end timestamps for each word in message metadata, enabling accurate real-time subtitle highlighting during replay.",
+      "acceptanceCriteria": [
+        "Gemini Live API or Web Speech API captures word-level timestamps during recording",
+        "Each word stored with: word text, startMs (from message start), endMs, confidence score",
+        "Word timings stored in message.metadata.wordTimings as JSONB array",
+        "Backend Message entity supports wordTimings field in metadata column",
+        "Frontend sends word timings to backend when saving message",
+        "Fallback to estimated timing if speech recognition fails (graceful degradation)",
+        "All quality checks pass"
+      ],
+      "status": "pending",
+      "priority": "high",
+      "estimatedContextSize": "large",
+      "technicalNotes": "Create wordTimingCapture.ts service. Option A (recommended): Use Gemini Live API's built-in word timestamps. Option B: Use Web Speech API with SpeechRecognitionResult timestamps. Store in Message.java metadata as: {wordTimings: [{word: string, startMs: number, endMs: number, confidence: number}]}. Integrate with App.tsx recording flow (lines 380-450). Create V8 migration if metadata column doesn't support JSONB arrays."
+    }
+  ],
+  "technicalContext": {
+    "frontend": "React 19 + TypeScript + Tailwind CSS",
+    "backend": "Spring Boot 3.x + PostgreSQL",
+    "videoProcessing": "Canvas API, Web Audio API, TensorFlow.js BodyPix or MediaPipe",
+    "aiIntegration": "Gemini API for emphasis detection and content detection",
+    "storage": "S3/R2 for attachments, JSONB metadata for composition events",
+    "designSystem": "Purple gradient theme (see skills/ui-design.md)",
+    "specialNotes": "Backend runs via VS Code Spring Boot Console. Performance target: 30 FPS composition, <50ms latency. Virtual backgrounds must match between guest and host for unified studio effect."
+  },
+  "qualityStandards": {
+    "typeChecking": "npm run type-check must pass",
+    "linting": "npm run lint must pass",
+    "testing": "Manual testing with various content types and session scenarios",
+    "performance": "30 FPS video composition, <50ms per-frame latency, smooth transitions",
+    "documentation": "Update docs/DEMO_GUIDE.md with new composition features"
+  },
+  "dependencies": {
+    "libraries": [
+      "@tensorflow/tfjs - For ML-powered background removal",
+      "@tensorflow-models/body-pix - Person segmentation model",
+      "react-transition-group - For animated transitions",
+      "Sharp.js (backend) - Thumbnail generation for documents"
+    ],
+    "assets": [
+      "Virtual studio backgrounds (15-20 high-res images in public/virtual-studios/)",
+      "Transition effect CSS animations",
+      "Event marker icons for timeline"
+    ]
+  }
+}

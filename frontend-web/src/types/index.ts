@@ -19,6 +19,15 @@ export interface Message {
   text: string;
   timestamp: number;
   relativeOffset: number; // ms from start of recording
+  duration?: number;
+  metadata?: {
+    attachmentType?: 'image' | 'document' | 'video' | 'audio';
+    attachmentName?: string;
+    attachmentUrl?: string;
+    attachmentSize?: number;
+    attachmentTimestamp?: number;
+    [key: string]: any; // Allow other metadata fields
+  };
 }
 
 export interface Session {

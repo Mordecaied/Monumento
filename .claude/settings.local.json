@@ -5,7 +5,20 @@
       "Bash(git remote add:*)",
       "Bash(git push:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(bash ralph.sh:*)",
+      "Bash(winget install:*)",
+      "Bash(curl:*)",
+      "Bash(chmod:*)",
+      "Bash(jq:*)",
+      "Bash(export PATH=\"$HOME/bin:$PATH\")",
+      "Bash(PATH=\"$HOME/bin:$PATH\" bash:*)",
+      "Bash(~/bin/jq.exe:*)",
+      "Bash(bash scripts/ralph/ralph.sh:*)",
+      "Bash(tee:*)",
+      "Bash(cat:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run lint)"
     ]
   }
 }
