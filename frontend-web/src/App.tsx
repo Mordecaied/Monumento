@@ -451,16 +451,45 @@ const App: React.FC = () => {
 
       console.log('✅ Session created:', savedSession.id, 'Metadata:', savedSession.metadata);
 
-      // Save all messages to the session
+      // Export composition events from services
+      const layoutEvents = layoutManagerRef.current.exportEvents();
+      const cameraEvents = cameraSwitcherRef.current.exportEvents();
+
+      console.log('📊 Exporting composition events:', {
+        layoutEvents: layoutEvents.length,
+        cameraEvents: cameraEvents.length
+      });
+
+      // Save all messages to the session with composition metadata
       const savedMessages: any[] = [];
       for (const msg of finalMessages) {
+        // Merge composition events with existing message metadata
+        const compositionEvents = [
+          ...(msg.metadata?.compositionEvents || []),
+          // Add relevant layout and camera events for this message's time range
+        ];
+
         const savedMsg = await sessionService.createMessage(savedSession.id, {
           role: msg.role,
           text: msg.text,
           relativeOffset: msg.relativeOffset || 0,
+          metadata: {
+            ...msg.metadata,
+            compositionEvents: compositionEvents.length > 0 ? compositionEvents : undefined,
+          }
         });
         savedMessages.push(savedMsg);
       }
+
+      // Store global composition events in session metadata
+      await sessionService.updateSessionMetadata(savedSession.id, {
+        ...savedSession.metadata,
+        compositionEvents: {
+          layouts: layoutEvents,
+          cameraSwitches: cameraEvents,
+          totalEvents: layoutEvents.length + cameraEvents.length
+        }
+      });
 
       // If avatar animation is enabled, upload host audio segments
       if (animateAvatar && hostAudioChunksRef.current.length > 0) {

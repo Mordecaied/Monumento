@@ -431,13 +431,22 @@ const SessionDetail: React.FC<SessionDetailProps> = ({ session, onBack, onUpdate
                     </div>
                  </div>
 
-                 {/* CLOSED CAPTIONS OVERLAY */}
+                 {/* US-014: ULTRA-LARGE SUBTITLES with emerald-400 green highlighting */}
                  <div className="absolute bottom-20 inset-x-0 px-20 text-center z-20 pointer-events-none">
-                    <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 max-w-4xl mx-auto drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
+                    <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 max-w-6xl mx-auto">
                        {(activeSentence || "").split(/\s+/).map((word, idx) => (
-                          <span 
-                            key={idx} 
-                            className={`text-4xl lg:text-7xl font-black tracking-tighter transition-all duration-150 ${idx === replayWordIdx ? 'text-emerald-400 scale-125 drop-shadow-[0_0_40px_rgba(52,211,153,0.8)]' : 'text-white/20'}`}
+                          <span
+                            key={idx}
+                            className={`text-9xl font-black tracking-tighter transition-all duration-200 ${
+                              idx === replayWordIdx
+                                ? 'text-emerald-400 scale-110 drop-shadow-[0_0_60px_rgba(52,211,153,1)] animate-pulse'
+                                : 'text-white/15 drop-shadow-[0_10px_30px_rgba(0,0,0,0.9)]'
+                            }`}
+                            style={{
+                              textShadow: idx === replayWordIdx
+                                ? '0 0 80px rgba(52,211,153,0.8), 0 0 120px rgba(52,211,153,0.6), 0 20px 40px rgba(0,0,0,0.9)'
+                                : '0 20px 40px rgba(0,0,0,0.9)'
+                            }}
                           >
                              {word}
                           </span>
@@ -472,21 +481,26 @@ const SessionDetail: React.FC<SessionDetailProps> = ({ session, onBack, onUpdate
                                onMouseEnter={() => setHoveredSegmentIdx(idx)}
                                onMouseLeave={() => setHoveredSegmentIdx(null)}
                              >
-                                <div className={`absolute inset-0 bg-white/5 rounded-full transition-all group-hover/timeline:h-6 ${hoveredSegmentIdx === idx ? 'bg-white/10' : ''}`} />
-                                <div className="absolute inset-y-0 left-0 bg-emerald-500 rounded-full transition-all group-hover/timeline:h-6 shadow-[0_0_20px_rgba(52,211,153,0.5)]" style={{ width: `${playedPercent}%` }} />
+                                {/* US-012: Purple gradient base with YouTube Stories style */}
+                                <div className={`absolute inset-0 bg-gradient-to-r from-purple-500/20 to-purple-700/20 rounded-full transition-all group-hover/timeline:h-6 ${hoveredSegmentIdx === idx ? 'from-purple-500/40 to-purple-700/40 scale-105' : ''}`} />
+
+                                {/* US-012: Purple gradient progress fill */}
+                                <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-purple-700 rounded-full transition-all group-hover/timeline:h-6 shadow-[0_0_20px_rgba(168,85,247,0.6)]" style={{ width: `${playedPercent}%` }} />
+
+                                {/* Active segment glow indicator */}
                                 {currentSegmentIdx === idx && (
-                                   <div className="absolute -top-3 inset-x-0 h-1.5 bg-emerald-400/60 rounded-full animate-pulse blur-[2px]" />
+                                   <div className="absolute -top-3 inset-x-0 h-1.5 bg-purple-400/70 rounded-full animate-pulse blur-[2px]" />
                                 )}
                                 
-                                {/* HOVER INFO POPUP */}
+                                {/* US-012: Enhanced hover info popup with purple theme */}
                                 {hoveredSegmentIdx === idx && (
-                                   <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-72 p-6 bg-[#121418] border border-white/10 rounded-3xl shadow-[0_30px_60px_rgba(0,0,0,0.8)] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-200">
+                                   <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-72 p-6 bg-gradient-to-br from-purple-900/40 to-[#121418] border border-purple-500/20 rounded-3xl shadow-[0_30px_60px_rgba(168,85,247,0.3)] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-200 backdrop-blur-xl">
                                       <div className="flex items-center justify-between mb-4">
-                                         <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-md">Segment {p.id}</div>
+                                         <div className="text-[10px] font-black uppercase tracking-widest text-purple-400 bg-purple-500/10 px-3 py-1 rounded-md border border-purple-500/20">Segment {p.id}</div>
                                          <div className="text-[10px] font-black text-white/30 tracking-widest">{Math.floor(p.startTime / 1000)}s - {Math.floor(p.endTime / 1000)}s</div>
                                       </div>
-                                      <div className="text-sm font-bold text-white/90 leading-relaxed italic border-l-2 border-emerald-500 pl-4">"{p.summary}"</div>
-                                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#121418] border-r border-b border-white/10 rotate-45" />
+                                      <div className="text-sm font-bold text-white/90 leading-relaxed italic border-l-2 border-purple-500 pl-4">"{p.summary}"</div>
+                                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-purple-900/40 to-[#121418] border-r border-b border-purple-500/20 rotate-45" />
                                    </div>
                                 )}
                              </div>
