@@ -13,6 +13,7 @@ import { GeminiSession } from './services/geminiService';
 import * as sessionService from './lib/api/session.service';
 import JSZip from 'jszip';
 import { LayoutManager, LayoutMode, LayoutConfig, LAYOUTS } from './services/layoutManager';
+import { CameraSwitcher, Speaker, getVolumeLevel } from './services/cameraSwitcher';
 
 declare global {
   var aistudio: {
@@ -60,6 +61,8 @@ const App: React.FC = () => {
     setCurrentLayout(layout);
     console.log('[Layout] Changed to', layout.mode, 'at', event.relativeOffset, 'ms');
   }));
+  const cameraSwitcherRef = useRef<CameraSwitcher>(new CameraSwitcher());
+  const [activeSpeaker, setActiveSpeaker] = useState<Speaker | null>(null);
   
   const [history, setHistory] = useState<Session[]>(() => {
     try {
@@ -154,8 +157,20 @@ const App: React.FC = () => {
       analyser.getByteFrequencyData(data);
       return data.reduce((a, b) => a + b, 0) / data.length;
     };
-    setIsGuestTalking(getLevel(volumeAnalysersRef.current.guest) > 15);
-    setIsHostTalking(getLevel(volumeAnalysersRef.current.host) > 15);
+
+    const guestVol = getLevel(volumeAnalysersRef.current.guest);
+    const hostVol = getLevel(volumeAnalysersRef.current.host);
+    const currentTime = Date.now() - sessionStartTime;
+
+    setIsGuestTalking(guestVol > 15);
+    setIsHostTalking(hostVol > 15);
+
+    // Camera switching with hysteresis
+    const result = cameraSwitcherRef.current.processVolumes(guestVol, hostVol, currentTime);
+    if (result.switched && result.event) {
+      setActiveSpeaker(result.activeSpeaker);
+    }
+
     volumeRequestRef.current = requestAnimationFrame(volumeLoop);
   };
 
