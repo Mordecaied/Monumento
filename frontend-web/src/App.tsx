@@ -12,6 +12,7 @@ import { useAuth } from './contexts/AuthContext';
 import { GeminiSession } from './services/geminiService';
 import * as sessionService from './lib/api/session.service';
 import JSZip from 'jszip';
+import { LayoutManager, LayoutMode, LayoutConfig, LAYOUTS } from './services/layoutManager';
 
 declare global {
   var aistudio: {
@@ -53,6 +54,12 @@ const App: React.FC = () => {
   const [isPausedForUpload, setIsPausedForUpload] = useState(false);
   const [productionStep, setProductionStep] = useState('');
   const [sessionStartTime, setSessionStartTime] = useState<number>(0);
+  const [currentLayout, setCurrentLayout] = useState<LayoutConfig>(LAYOUTS.DEFAULT);
+  const [sharedContent, setSharedContent] = useState<{ file: File; type: string; url: string } | null>(null);
+  const layoutManagerRef = useRef<LayoutManager>(new LayoutManager((layout, event) => {
+    setCurrentLayout(layout);
+    console.log('[Layout] Changed to', layout.mode, 'at', event.relativeOffset, 'ms');
+  }));
   
   const [history, setHistory] = useState<Session[]>(() => {
     try {
@@ -320,17 +327,26 @@ const App: React.FC = () => {
     }
 
     try {
+      // Create object URL for immediate display
+      const contentUrl = URL.createObjectURL(file);
+
       // Create FormData for upload
       const formData = new FormData();
       formData.append('file', file);
       formData.append('type', type);
       formData.append('timestamp', String(Date.now() - sessionStartTime));
 
-      // TODO: Upload to backend (will be implemented in US-002)
+      // TODO: Upload to backend (backend implementation needed)
       console.log('Uploading content:', file.name, type);
 
-      // For now, store in message metadata
+      // Switch layout to show content
       const currentTimestamp = Date.now() - sessionStartTime;
+      const layoutEvent = layoutManagerRef.current.autoSwitchForContent(type, currentTimestamp);
+
+      // Set shared content for display
+      setSharedContent({ file, type, url: contentUrl });
+
+      // Store in message metadata with layout change event
       const newMessage: Message = {
         role: 'user',
         text: `[Shared ${type}: ${file.name}]`,
@@ -340,8 +356,19 @@ const App: React.FC = () => {
         metadata: {
           attachmentType: type,
           attachmentName: file.name,
+          attachmentUrl: contentUrl,
           attachmentSize: file.size,
-          attachmentTimestamp: currentTimestamp
+          attachmentTimestamp: currentTimestamp,
+          compositionEvents: [
+            {
+              type: 'layout_change',
+              timestamp: layoutEvent.timestamp,
+              relativeOffset: layoutEvent.relativeOffset,
+              fromLayout: layoutEvent.fromLayout,
+              toLayout: layoutEvent.toLayout,
+              reason: layoutEvent.reason
+            }
+          ]
         }
       };
 
@@ -356,6 +383,17 @@ const App: React.FC = () => {
       }
       setIsPausedForUpload(false);
     }
+  };
+
+  const handleCloseContent = () => {
+    if (sharedContent) {
+      URL.revokeObjectURL(sharedContent.url);
+    }
+    setSharedContent(null);
+
+    // Return to default layout
+    const currentTimestamp = Date.now() - sessionStartTime;
+    layoutManagerRef.current.returnToDefault(currentTimestamp);
   };
 
   const generatePlainTextTranscript = (msgs: Message[]) => {
@@ -566,58 +604,133 @@ https://monumento.app
           </div>
         </header>
 
-        <main className="flex-1 grid grid-cols-12 gap-0 overflow-hidden">
-          {/* SIDE-BY-SIDE: HOST (LEFT) */}
-          <div className="col-span-4 relative border-r border-white/5 bg-[#0a0a0a] flex flex-col items-center justify-center p-12 overflow-hidden">
-             <div className="absolute inset-0 z-0 opacity-20 blur-xl scale-110">
-                <img src={STUDIO_AVATARS[vibe!]} className="w-full h-full object-cover" alt="" />
-             </div>
-             <div className="relative z-10 w-full max-w-sm aspect-square rounded-full overflow-hidden border-4 border-white/10 shadow-[0_0_80px_rgba(0,0,0,1)] ring-1 ring-white/20 transition-all duration-500 transform">
-                <img src={STUDIO_AVATARS[vibe!]} className="w-full h-full object-cover" alt="" />
-                <video src={STUDIO_VIDEO_PREVIEWS[vibe!]} className={`absolute inset-0 w-full h-full object-cover z-20 transition-opacity duration-300 ${isHostTalking ? 'opacity-30' : 'opacity-0'}`} autoPlay loop muted playsInline />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-             </div>
-             <div className="mt-10 text-center space-y-2 relative z-10">
-                <div className="text-[10px] font-black uppercase tracking-[0.5em] text-purple-400">Broadcast Host</div>
-                <h2 className="text-4xl font-black uppercase tracking-tighter text-white/90">{vibe}</h2>
-                <div className="flex justify-center gap-1.5 h-6 items-end mt-4">
-                   {[...Array(8)].map((_, i) => (
+        <main className="flex-1 grid grid-cols-12 gap-0 overflow-hidden relative">
+          {/* DEFAULT LAYOUT: 3-column grid */}
+          {currentLayout.mode === 'DEFAULT' && (
+            <>
+              {/* SIDE-BY-SIDE: HOST (LEFT) */}
+              <div className="col-span-4 relative border-r border-white/5 bg-[#0a0a0a] flex flex-col items-center justify-center p-12 overflow-hidden transition-all duration-300">
+                <div className="absolute inset-0 z-0 opacity-20 blur-xl scale-110">
+                  <img src={STUDIO_AVATARS[vibe!]} className="w-full h-full object-cover" alt="" />
+                </div>
+                <div className="relative z-10 w-full max-w-sm aspect-square rounded-full overflow-hidden border-4 border-white/10 shadow-[0_0_80px_rgba(0,0,0,1)] ring-1 ring-white/20 transition-all duration-500 transform">
+                  <img src={STUDIO_AVATARS[vibe!]} className="w-full h-full object-cover" alt="" />
+                  <video src={STUDIO_VIDEO_PREVIEWS[vibe!]} className={`absolute inset-0 w-full h-full object-cover z-20 transition-opacity duration-300 ${isHostTalking ? 'opacity-30' : 'opacity-0'}`} autoPlay loop muted playsInline />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                </div>
+                <div className="mt-10 text-center space-y-2 relative z-10">
+                  <div className="text-[10px] font-black uppercase tracking-[0.5em] text-purple-400">Broadcast Host</div>
+                  <h2 className="text-4xl font-black uppercase tracking-tighter text-white/90">{vibe}</h2>
+                  <div className="flex justify-center gap-1.5 h-6 items-end mt-4">
+                    {[...Array(8)].map((_, i) => (
                       <div key={i} className={`w-1 rounded-full transition-all duration-75 bg-purple-500 ${isHostTalking ? 'animate-bounce' : 'h-1 opacity-20'}`} style={{ height: isHostTalking ? `${30 + Math.random() * 70}%` : '4px', animationDelay: `${i * 0.05}s` }} />
-                   ))}
+                    ))}
+                  </div>
                 </div>
-             </div>
-          </div>
+              </div>
 
-          {/* SIDE-BY-SIDE: TRANSCRIPT (MIDDLE) */}
-          <div className="col-span-4 flex flex-col bg-black/60 border-x border-white/5 overflow-hidden">
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-10 space-y-10">
-              {messages.length === 0 && <div className="h-full flex items-center justify-center text-[10px] font-black uppercase tracking-[0.5em] opacity-20 text-center px-12 italic">Waiting for connection...</div>}
-              {messages.map((m, i) => (
-                <div key={i} className={`flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
-                  <span className={`text-[9px] font-black uppercase tracking-widest ${m.role === 'ai' ? 'text-purple-400' : 'text-emerald-400'}`}>{m.role === 'ai' ? 'Host' : 'Guest'}</span>
-                  <div className={`p-6 rounded-2xl max-w-[95%] text-lg font-medium border leading-relaxed shadow-lg ${m.role === 'ai' ? 'bg-[#121212] border-white/5 text-white/90' : 'bg-emerald-600/5 border-emerald-500/10 text-white/70 italic'}`}>{m.text}</div>
+              {/* SIDE-BY-SIDE: TRANSCRIPT (MIDDLE) */}
+              <div className="col-span-4 flex flex-col bg-black/60 border-x border-white/5 overflow-hidden">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-10 space-y-10">
+                  {messages.length === 0 && <div className="h-full flex items-center justify-center text-[10px] font-black uppercase tracking-[0.5em] opacity-20 text-center px-12 italic">Waiting for connection...</div>}
+                  {messages.map((m, i) => (
+                    <div key={i} className={`flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+                      <span className={`text-[9px] font-black uppercase tracking-widest ${m.role === 'ai' ? 'text-purple-400' : 'text-emerald-400'}`}>{m.role === 'ai' ? 'Host' : 'Guest'}</span>
+                      <div className={`p-6 rounded-2xl max-w-[95%] text-lg font-medium border leading-relaxed shadow-lg ${m.role === 'ai' ? 'bg-[#121212] border-white/5 text-white/90' : 'bg-emerald-600/5 border-emerald-500/10 text-white/70 italic'}`}>{m.text}</div>
+                    </div>
+                  ))}
+                  <div ref={chatEndRef} />
                 </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-          </div>
+              </div>
 
-          {/* SIDE-BY-SIDE: GUEST (RIGHT) */}
-          <div className="col-span-4 relative bg-[#0a0a0a] flex flex-col items-center justify-center p-12 overflow-hidden">
-             <div className="relative z-10 w-full max-w-sm aspect-square rounded-full overflow-hidden border-4 border-white/10 shadow-[0_0_80px_rgba(0,0,0,1)] ring-1 ring-white/20 bg-black">
-                <VirtualStudio vibe={vibe!} customBackground={null} active={true} stream={sharedStreamRef.current} onFrame={(f) => sessionRef.current?.sendImageFrame(f)} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-             </div>
-             <div className="mt-10 text-center space-y-2 relative z-10">
-                <div className="text-[10px] font-black uppercase tracking-[0.5em] text-emerald-400">Guest Feed</div>
-                <h2 className="text-4xl font-black uppercase tracking-tighter text-white/90">The Guest</h2>
-                <div className="flex justify-center gap-1.5 h-6 items-end mt-4">
-                   {[...Array(8)].map((_, i) => (
+              {/* SIDE-BY-SIDE: GUEST (RIGHT) */}
+              <div className="col-span-4 relative bg-[#0a0a0a] flex flex-col items-center justify-center p-12 overflow-hidden">
+                <div className="relative z-10 w-full max-w-sm aspect-square rounded-full overflow-hidden border-4 border-white/10 shadow-[0_0_80px_rgba(0,0,0,1)] ring-1 ring-white/20 bg-black">
+                  <VirtualStudio vibe={vibe!} customBackground={null} active={true} stream={sharedStreamRef.current} onFrame={(f) => sessionRef.current?.sendImageFrame(f)} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                </div>
+                <div className="mt-10 text-center space-y-2 relative z-10">
+                  <div className="text-[10px] font-black uppercase tracking-[0.5em] text-emerald-400">Guest Feed</div>
+                  <h2 className="text-4xl font-black uppercase tracking-tighter text-white/90">The Guest</h2>
+                  <div className="flex justify-center gap-1.5 h-6 items-end mt-4">
+                    {[...Array(8)].map((_, i) => (
                       <div key={i} className={`w-1 rounded-full transition-all duration-75 bg-emerald-500 ${isGuestTalking ? 'animate-bounce' : 'h-1 opacity-20'}`} style={{ height: isGuestTalking ? `${30 + Math.random() * 70}%` : '4px', animationDelay: `${i * 0.05}s` }} />
-                   ))}
+                    ))}
+                  </div>
                 </div>
-             </div>
-          </div>
+              </div>
+            </>
+          )}
+
+          {/* CONTENT SHARED LAYOUT: Content dominant with PiP speakers */}
+          {(currentLayout.mode === 'CONTENT_SHARED' || currentLayout.mode === 'SCREEN_SHARE') && sharedContent && (
+            <div className="col-span-12 relative bg-black flex items-center justify-center p-12 animate-in fade-in duration-300">
+              {/* Shared Content Display */}
+              <div className="w-full h-full flex items-center justify-center">
+                {sharedContent.type === 'image' && (
+                  <img src={sharedContent.url} alt={sharedContent.file.name} className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" />
+                )}
+                {sharedContent.type === 'video' && (
+                  <video src={sharedContent.url} controls autoPlay className="max-w-full max-h-full rounded-2xl shadow-2xl" />
+                )}
+                {sharedContent.type === 'audio' && (
+                  <div className="bg-gradient-to-br from-purple-900/40 to-emerald-900/40 p-16 rounded-3xl border border-white/10 shadow-2xl">
+                    <div className="text-center space-y-6">
+                      <div className="w-24 h-24 mx-auto rounded-full bg-purple-600/20 border-4 border-purple-500/40 flex items-center justify-center">
+                        <span className="text-6xl">🎵</span>
+                      </div>
+                      <h3 className="text-2xl font-black text-white/90">{sharedContent.file.name}</h3>
+                      <audio src={sharedContent.url} controls className="mt-6 w-96" />
+                    </div>
+                  </div>
+                )}
+                {sharedContent.type === 'document' && (
+                  <div className="bg-gradient-to-br from-emerald-900/40 to-blue-900/40 p-16 rounded-3xl border border-white/10 shadow-2xl">
+                    <div className="text-center space-y-6">
+                      <div className="w-32 h-40 mx-auto rounded-2xl bg-white flex items-center justify-center border-4 border-white/20 shadow-xl">
+                        <span className="text-8xl">📄</span>
+                      </div>
+                      <h3 className="text-2xl font-black text-white/90">{sharedContent.file.name}</h3>
+                      <p className="text-sm text-white/60">Document preview</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Close button */}
+              <button
+                onClick={handleCloseContent}
+                className="absolute top-8 right-8 px-6 py-3 bg-red-600 hover:bg-red-500 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-xl z-40"
+              >
+                Close Content
+              </button>
+
+              {/* PiP: Guest (Bottom Left) */}
+              <div className="absolute bottom-6 left-6 w-40 h-40 rounded-xl overflow-hidden border-2 border-emerald-500/40 shadow-2xl z-30 bg-black">
+                <VirtualStudio vibe={vibe!} customBackground={null} active={true} stream={sharedStreamRef.current} onFrame={(f) => sessionRef.current?.sendImageFrame(f)} />
+                {isGuestTalking && (
+                  <div className="absolute inset-0 border-4 border-emerald-400 rounded-xl pointer-events-none animate-pulse" />
+                )}
+                <div className="absolute bottom-2 left-2 text-[8px] font-black uppercase tracking-wider text-emerald-400 bg-black/60 px-2 py-1 rounded">
+                  Guest
+                </div>
+              </div>
+
+              {/* PiP: Host (Bottom Left, above guest) */}
+              <div className="absolute bottom-56 left-6 w-40 h-40 rounded-xl overflow-hidden border-2 border-purple-500/40 shadow-2xl z-30 bg-[#0a0a0a]">
+                <div className="w-full h-full flex items-center justify-center">
+                  <img src={STUDIO_AVATARS[vibe!]} className="w-full h-full object-cover" alt="" />
+                  <video src={STUDIO_VIDEO_PREVIEWS[vibe!]} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isHostTalking ? 'opacity-30' : 'opacity-0'}`} autoPlay loop muted playsInline />
+                </div>
+                {isHostTalking && (
+                  <div className="absolute inset-0 border-4 border-purple-400 rounded-xl pointer-events-none animate-pulse" />
+                )}
+                <div className="absolute bottom-2 left-2 text-[8px] font-black uppercase tracking-wider text-purple-400 bg-black/60 px-2 py-1 rounded">
+                  Host
+                </div>
+              </div>
+            </div>
+          )}
         </main>
 
         <ContentShareModal
