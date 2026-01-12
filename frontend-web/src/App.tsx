@@ -14,6 +14,7 @@ import * as sessionService from './lib/api/session.service';
 import JSZip from 'jszip';
 import { LayoutManager, LayoutMode, LayoutConfig, LAYOUTS } from './services/layoutManager';
 import { CameraSwitcher, Speaker, getVolumeLevel } from './services/cameraSwitcher';
+import { VideoCompositor } from './services/videoCompositor';
 
 declare global {
   var aistudio: {
@@ -63,6 +64,7 @@ const App: React.FC = () => {
   }));
   const cameraSwitcherRef = useRef<CameraSwitcher>(new CameraSwitcher());
   const [activeSpeaker, setActiveSpeaker] = useState<Speaker | null>(null);
+  const compositorRef = useRef<VideoCompositor | null>(null);
   
   const [history, setHistory] = useState<Session[]>(() => {
     try {
@@ -163,13 +165,26 @@ const App: React.FC = () => {
     const hostVol = getLevel(volumeAnalysersRef.current.host);
     const currentTime = Date.now() - sessionStartTime;
 
-    setIsGuestTalking(guestVol > 15);
-    setIsHostTalking(hostVol > 15);
+    const isGuestCurrentlyTalking = guestVol > 15;
+    const isHostCurrentlyTalking = hostVol > 15;
+
+    setIsGuestTalking(isGuestCurrentlyTalking);
+    setIsHostTalking(isHostCurrentlyTalking);
+
+    // Update compositor with host talking state for animated overlay
+    if (compositorRef.current) {
+      compositorRef.current.setHostTalking(isHostCurrentlyTalking);
+    }
 
     // Camera switching with hysteresis
     const result = cameraSwitcherRef.current.processVolumes(guestVol, hostVol, currentTime);
     if (result.switched && result.event) {
       setActiveSpeaker(result.activeSpeaker);
+
+      // Update compositor when speaker changes
+      if (compositorRef.current && result.activeSpeaker) {
+        compositorRef.current.setActiveSpeaker(result.activeSpeaker);
+      }
     }
 
     volumeRequestRef.current = requestAnimationFrame(volumeLoop);
@@ -177,6 +192,7 @@ const App: React.FC = () => {
 
   const startStudioRecording = (guestStream: MediaStream, aiStream: MediaStream | null) => {
     try {
+      // Step 1: Set up audio mixing (unchanged)
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const mixedDest = audioCtx.createMediaStreamDestination();
 
@@ -229,15 +245,38 @@ const App: React.FC = () => {
         }
       }
 
+      // Step 2: Create VideoCompositor for proper video composition
+      if (!vibe) {
+        throw new Error('No vibe selected for compositor');
+      }
+
+      console.log('[Recording] Creating VideoCompositor...');
+      const compositor = new VideoCompositor(
+        guestStream,
+        STUDIO_AVATARS[vibe],
+        animateAvatar ? STUDIO_VIDEO_PREVIEWS[vibe] : undefined
+      );
+      compositorRef.current = compositor;
+
+      // Step 3: Start compositor and get composed video stream
+      const composedVideoStream = compositor.start();
+      console.log('[Recording] VideoCompositor started');
+
+      // Step 4: Create final stream with composed video + mixed audio
       const finalStream = new MediaStream();
-      guestStream.getVideoTracks().forEach(t => finalStream.addTrack(t));
+      composedVideoStream.getVideoTracks().forEach(t => finalStream.addTrack(t));
       mixedDest.stream.getAudioTracks().forEach(t => finalStream.addTrack(t));
 
+      // Step 5: Record the properly composed stream
       const recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm;codecs=vp8,opus' });
       mediaRecorderRef.current = recorder;
       videoChunksRef.current = [];
       recorder.ondataavailable = (e) => e.data && e.data.size > 0 && videoChunksRef.current.push(e.data);
-      recorder.start(1000); 
+      recorder.start(1000);
+
+      console.log('[Recording] MediaRecorder started with composed video stream');
+
+      // Start volume monitoring loop
       volumeLoop();
     } catch (err) {
       console.error("Recording setup failed", err);
@@ -322,6 +361,14 @@ const App: React.FC = () => {
     sessionRef.current?.stop();
     if (volumeRequestRef.current) cancelAnimationFrame(volumeRequestRef.current);
     mediaRecorderRef.current?.stop();
+
+    // Cleanup VideoCompositor
+    if (compositorRef.current) {
+      console.log('[Recording] Disposing VideoCompositor');
+      compositorRef.current.dispose();
+      compositorRef.current = null;
+    }
+
     sharedStreamRef.current?.getTracks().forEach(t => t.stop());
     setGuestStream(null);
     setIsInterviewing(false);
