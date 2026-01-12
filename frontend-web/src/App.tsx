@@ -106,14 +106,15 @@ const App: React.FC = () => {
         const backendSessions = await sessionService.getUserSessions();
 
         // Convert backend sessions to frontend Session type
-        const convertedSessions: Session[] = backendSessions.map(s => ({
+        const convertedSessions: Session[] = backendSessions.content.map((s: any) => ({
           id: s.id,
-          vibe: s.studioVibe as StudioVibe,
-          mode: s.interviewMode as InterviewMode,
-          duration: s.durationMinutes as InterviewDuration,
+          vibe: s.vibe as StudioVibe,
+          mode: s.mode as InterviewMode,
+          duration: s.duration as InterviewDuration,
           createdAt: new Date(s.createdAt).getTime(),
           messages: [], // Messages will be loaded when viewing session detail
-          videoUrl: undefined, // Video is stored locally
+          videoUrl: s.videoUrl,
+          summary: s.summary,
         }));
 
         setHistory(convertedSessions);
@@ -301,7 +302,7 @@ const App: React.FC = () => {
           setMessages(prev => {
             const now = Date.now();
             const rel = now - startTimestamp;
-            const role = isUser ? 'user' : 'ai';
+            const role = (isUser ? 'user' : 'ai') as 'user' | 'ai';
             const last = prev[prev.length - 1];
 
             // If the last message was from the same role and happened within 3 seconds, append to it
@@ -519,7 +520,7 @@ const App: React.FC = () => {
           // Add relevant layout and camera events for this message's time range
         ];
 
-        const savedMsg = await sessionService.createMessage(savedSession.id, {
+        const savedMsg = await sessionService.postMessage(savedSession.id, {
           role: msg.role,
           text: msg.text,
           relativeOffset: msg.relativeOffset || 0,

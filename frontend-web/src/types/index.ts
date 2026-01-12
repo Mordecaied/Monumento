@@ -37,7 +37,8 @@ export interface Session {
   duration: number;
   messages: Message[];
   createdAt: number;
-  videoUrl?: string; 
+  videoUrl?: string;
+  summary?: string;
 }
 
 export type AppView = 'SETUP' | 'COUNTDOWN' | 'RECORDING' | 'PRODUCING' | 'HISTORY' | 'SESSION_DETAIL';

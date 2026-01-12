@@ -39,6 +39,7 @@ export interface MessageRequest {
   text: string;
   relativeOffset?: number;
   audioUrl?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface Message {

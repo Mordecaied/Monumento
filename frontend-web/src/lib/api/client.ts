@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 /**
  * API Client Configuration
  * Handles HTTP requests to the backend with authentication
