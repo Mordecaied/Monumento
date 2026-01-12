@@ -63,16 +63,20 @@ const SessionDetail: React.FC<SessionDetailProps> = ({ session, onBack, onUpdate
   const pairs = useMemo(() => {
     const p: { id: number; ai: Message; aiIdx: number; user?: Message; userIdx?: number; startTime: number; endTime: number; summary: string }[] = [];
     const msgs = messages;
-    
+
+    console.log('[SessionDetail] Computing pairs from', msgs.length, 'messages, totalDurationMs:', totalDurationMs);
+
     for (let i = 0; i < msgs.length; i++) {
       if (msgs[i].role === 'ai') {
         const aiMsg = msgs[i];
         const userMsg = msgs[i + 1] && msgs[i + 1].role === 'user' ? msgs[i + 1] : undefined;
-        
+
         const startTime = aiMsg.relativeOffset;
-        const endTime = msgs[i + (userMsg ? 2 : 1)] 
-          ? msgs[i + (userMsg ? 2 : 1)].relativeOffset 
+        const endTime = msgs[i + (userMsg ? 2 : 1)]
+          ? msgs[i + (userMsg ? 2 : 1)].relativeOffset
           : (videoRef.current?.duration || 0) * 1000 || startTime + 5000;
+
+        console.log('[SessionDetail] Creating pair', p.length + 1, '- startTime:', startTime, 'endTime:', endTime);
 
         const summaryText = (aiMsg.text + " " + (userMsg?.text || "")).trim();
         const summary = summaryText.split(' ').slice(0, 10).join(' ') + (summaryText.split(' ').length > 10 ? '...' : '');
@@ -90,6 +94,8 @@ const SessionDetail: React.FC<SessionDetailProps> = ({ session, onBack, onUpdate
         if (userMsg) i++;
       }
     }
+
+    console.log('[SessionDetail] Computed', p.length, 'pairs');
     return p;
   }, [messages, totalDurationMs]);
 
@@ -462,63 +468,71 @@ const SessionDetail: React.FC<SessionDetailProps> = ({ session, onBack, onUpdate
               {/* PROFESSIONAL SEGMENTED TIMELINE */}
               <div className="w-full max-w-5xl mt-16 px-4">
                  <div className="relative h-16 flex items-end">
-                    <div className="flex w-full gap-2 h-4 items-end group/timeline">
-                       {pairs.map((p, idx) => {
-                          const widthPercent = ((p.endTime - p.startTime) / (totalDurationMs || 1)) * 100;
-                          const playedPercent = Math.min(100, Math.max(0, (currentTimeMs - p.startTime) / (p.endTime - p.startTime) * 100));
-
-                          return (
-                             <div 
-                               key={p.id} 
-                               className="h-full relative cursor-pointer group/segment"
-                               style={{ width: `${widthPercent}%` }}
-                               onClick={() => jumpToSegment(idx)}
-                               onMouseEnter={() => setHoveredSegmentIdx(idx)}
-                               onMouseLeave={() => setHoveredSegmentIdx(null)}
-                             >
-                                {/* US-012: Purple gradient base with YouTube Stories style */}
-                                <div className={`absolute inset-0 bg-gradient-to-r from-purple-500/20 to-purple-700/20 rounded-full transition-all group-hover/timeline:h-6 ${hoveredSegmentIdx === idx ? 'from-purple-500/40 to-purple-700/40 scale-105' : ''}`} />
-
-                                {/* US-012: Purple gradient progress fill */}
-                                <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-purple-700 rounded-full transition-all group-hover/timeline:h-6 shadow-[0_0_20px_rgba(168,85,247,0.6)]" style={{ width: `${playedPercent}%` }} />
-
-                                {/* Active segment glow indicator */}
-                                {currentSegmentIdx === idx && (
-                                   <div className="absolute -top-3 inset-x-0 h-1.5 bg-purple-400/70 rounded-full animate-pulse blur-[2px]" />
-                                )}
-                                
-                                {/* US-012: Enhanced hover info popup with purple theme */}
-                                {hoveredSegmentIdx === idx && (
-                                   <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-72 p-6 bg-gradient-to-br from-purple-900/40 to-[#121418] border border-purple-500/20 rounded-3xl shadow-[0_30px_60px_rgba(168,85,247,0.3)] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-200 backdrop-blur-xl">
-                                      <div className="flex items-center justify-between mb-4">
-                                         <div className="text-[10px] font-black uppercase tracking-widest text-purple-400 bg-purple-500/10 px-3 py-1 rounded-md border border-purple-500/20">Segment {p.id}</div>
-                                         <div className="text-[10px] font-black text-white/30 tracking-widest">{Math.floor(p.startTime / 1000)}s - {Math.floor(p.endTime / 1000)}s</div>
-                                      </div>
-                                      <div className="text-sm font-bold text-white/90 leading-relaxed italic border-l-2 border-purple-500 pl-4">"{p.summary}"</div>
-                                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-purple-900/40 to-[#121418] border-r border-b border-purple-500/20 rotate-45" />
-                                   </div>
-                                )}
-                             </div>
-                          );
-                       })}
-                    </div>
-                 </div>
-                 
-                 <div className="flex justify-between items-center mt-8 text-[11px] font-black text-white/20 uppercase tracking-[0.4em]">
-                    <div className="flex items-center gap-4">
-                       <span className="text-emerald-500 bg-emerald-500/10 px-4 py-1.5 rounded-lg border border-emerald-500/10 shadow-lg">{Math.floor(currentTimeMs / 1000)}s</span>
-                       <span className="opacity-10 scale-150">/</span>
-                       <span>{Math.floor(totalDurationMs / 1000)}s Total Duration</span>
-                    </div>
-                    <div className="flex items-center gap-6">
-                       <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(52,211,153,1)]" />
-                          <span className="text-white/60">Broadcast Feed {activeRole === 'ai' ? '(Host)' : '(Guest)'}</span>
+                    {pairs.length === 0 ? (
+                       <div className="w-full text-center py-4 text-white/30 text-sm italic">
+                          Timeline will appear once conversation segments are available
                        </div>
-                       <span className="opacity-10">•</span>
-                       <span className="text-white/80">Segment {currentSegmentIdx + 1} of {pairs.length}</span>
-                    </div>
+                    ) : (
+                       <div className="flex w-full gap-2 h-4 items-end group/timeline">
+                          {pairs.map((p, idx) => {
+                             const widthPercent = ((p.endTime - p.startTime) / (totalDurationMs || 1)) * 100;
+                             const playedPercent = Math.min(100, Math.max(0, (currentTimeMs - p.startTime) / (p.endTime - p.startTime) * 100));
+
+                             return (
+                                <div
+                                  key={p.id}
+                                  className="h-full relative cursor-pointer group/segment"
+                                  style={{ width: `${widthPercent}%` }}
+                                  onClick={() => jumpToSegment(idx)}
+                                  onMouseEnter={() => setHoveredSegmentIdx(idx)}
+                                  onMouseLeave={() => setHoveredSegmentIdx(null)}
+                                >
+                                   {/* US-012: Purple gradient base with YouTube Stories style */}
+                                   <div className={`absolute inset-0 bg-gradient-to-r from-purple-500/20 to-purple-700/20 rounded-full transition-all group-hover/timeline:h-6 ${hoveredSegmentIdx === idx ? 'from-purple-500/40 to-purple-700/40 scale-105' : ''}`} />
+
+                                   {/* US-012: Purple gradient progress fill */}
+                                   <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-purple-700 rounded-full transition-all group-hover/timeline:h-6 shadow-[0_0_20px_rgba(168,85,247,0.6)]" style={{ width: `${playedPercent}%` }} />
+
+                                   {/* Active segment glow indicator */}
+                                   {currentSegmentIdx === idx && (
+                                      <div className="absolute -top-3 inset-x-0 h-1.5 bg-purple-400/70 rounded-full animate-pulse blur-[2px]" />
+                                   )}
+
+                                   {/* US-012: Enhanced hover info popup with purple theme */}
+                                   {hoveredSegmentIdx === idx && (
+                                      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-72 p-6 bg-gradient-to-br from-purple-900/40 to-[#121418] border border-purple-500/20 rounded-3xl shadow-[0_30px_60px_rgba(168,85,247,0.3)] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-200 backdrop-blur-xl">
+                                         <div className="flex items-center justify-between mb-4">
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-purple-400 bg-purple-500/10 px-3 py-1 rounded-md border border-purple-500/20">Segment {p.id}</div>
+                                            <div className="text-[10px] font-black text-white/30 tracking-widest">{Math.floor(p.startTime / 1000)}s - {Math.floor(p.endTime / 1000)}s</div>
+                                         </div>
+                                         <div className="text-sm font-bold text-white/90 leading-relaxed italic border-l-2 border-purple-500 pl-4">"{p.summary}"</div>
+                                         <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-purple-900/40 to-[#121418] border-r border-b border-purple-500/20 rotate-45" />
+                                      </div>
+                                   )}
+                                </div>
+                             );
+                          })}
+                       </div>
+                    )}
                  </div>
+
+                 {pairs.length > 0 && (
+                    <div className="flex justify-between items-center mt-8 text-[11px] font-black text-white/20 uppercase tracking-[0.4em]">
+                       <div className="flex items-center gap-4">
+                          <span className="text-emerald-500 bg-emerald-500/10 px-4 py-1.5 rounded-lg border border-emerald-500/10 shadow-lg">{Math.floor(currentTimeMs / 1000)}s</span>
+                          <span className="opacity-10 scale-150">/</span>
+                          <span>{Math.floor(totalDurationMs / 1000)}s Total Duration</span>
+                       </div>
+                       <div className="flex items-center gap-6">
+                          <div className="flex items-center gap-3">
+                             <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(52,211,153,1)]" />
+                             <span className="text-white/60">Broadcast Feed {activeRole === 'ai' ? '(Host)' : '(Guest)'}</span>
+                          </div>
+                          <span className="opacity-10">•</span>
+                          <span className="text-white/80">Segment {currentSegmentIdx + 1} of {pairs.length}</span>
+                       </div>
+                    </div>
+                 )}
               </div>
            </div>
         </div>
