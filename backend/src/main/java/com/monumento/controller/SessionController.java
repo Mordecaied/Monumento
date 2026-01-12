@@ -83,6 +83,20 @@ public class SessionController {
         }
     }
 
+    @PatchMapping("/{sessionId}/metadata")
+    public ResponseEntity<?> updateSessionMetadata(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID sessionId,
+            @RequestBody Map<String, Object> metadata) {
+        try {
+            SessionResponse response = sessionService.updateSessionMetadata(userId, sessionId, metadata);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @DeleteMapping("/{sessionId}")
     public ResponseEntity<?> deleteSession(
             @AuthenticationPrincipal UUID userId,

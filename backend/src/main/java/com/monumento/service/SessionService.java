@@ -90,6 +90,27 @@ public class SessionService {
     }
 
     @Transactional
+    public SessionResponse updateSessionMetadata(UUID userId, UUID sessionId, Map<String, Object> metadataUpdates) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        if (!session.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Unauthorized access to session");
+        }
+
+        // Merge new metadata with existing metadata (don't replace)
+        Map<String, Object> existingMetadata = session.getMetadata();
+        if (existingMetadata == null) {
+            existingMetadata = new java.util.HashMap<>();
+        }
+        existingMetadata.putAll(metadataUpdates);
+        session.setMetadata(existingMetadata);
+
+        session = sessionRepository.save(session);
+        return mapToResponse(session);
+    }
+
+    @Transactional
     public void deleteSession(UUID userId, UUID sessionId) {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new RuntimeException("Session not found"));

@@ -105,6 +105,16 @@ export async function updateSession(
 }
 
 /**
+ * Update session metadata (merges with existing metadata)
+ */
+export async function updateSessionMetadata(
+  sessionId: string,
+  metadata: SessionMetadata
+): Promise<Session> {
+  return apiClient.patch<Session>(`/sessions/${sessionId}/metadata`, metadata, true);
+}
+
+/**
  * Delete a session
  */
 export async function deleteSession(sessionId: string): Promise<void> {
@@ -215,6 +225,7 @@ export const sessionService = {
   getSession,
   getUserSessions,
   updateSession,
+  updateSessionMetadata,
   deleteSession,
   postMessage,
   getSessionMessages,

@@ -114,6 +114,13 @@ export const apiClient = {
       requiresAuth,
     }),
 
+  patch: <T>(endpoint: string, data?: any, requiresAuth = false) =>
+    request<T>(endpoint, {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+      requiresAuth,
+    }),
+
   delete: <T>(endpoint: string, requiresAuth = false) =>
     request<T>(endpoint, { method: 'DELETE', requiresAuth }),
 };
