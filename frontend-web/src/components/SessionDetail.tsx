@@ -364,8 +364,8 @@ const SessionDetail: React.FC<SessionDetailProps> = ({ session, onBack, onUpdate
            </header>
            
            <div className="flex-1 w-full flex flex-col items-center justify-center px-12 pb-12 relative overflow-hidden">
-              {/* MIXED VIDEO PREVIEW: Toggles between Host and Guest based on activeRole */}
-              <div className="w-full max-w-5xl aspect-video relative rounded-[3rem] overflow-hidden bg-black shadow-[0_80px_160px_rgba(0,0,0,1)] border border-white/5 group">
+              {/* MIXED VIDEO PREVIEW: Toggles between Host and Guest based on activeRole - YouTube 16:9 style */}
+              <div className="w-full max-w-6xl aspect-video relative rounded-2xl overflow-hidden bg-black shadow-[0_20px_60px_rgba(0,0,0,0.8)] border border-white/10 group">
                  <div className="absolute inset-0 z-0">
                     {/* HOST VIEW */}
                     <div className={`absolute inset-0 transition-all duration-200 ${activeRole === 'ai' ? 'opacity-100 scale-100' : 'opacity-0 scale-105 pointer-events-none'}`}>

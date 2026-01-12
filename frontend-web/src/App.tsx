@@ -629,7 +629,7 @@ https://monumento.app
         <header className="h-20 border-b border-white/5 bg-black/40 backdrop-blur-xl flex items-center justify-between px-12 z-50">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-red-600 animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.8)]" />
+              <div className="w-3 h-3 rounded-2xl bg-red-600 animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.8)]" />
               <span className="text-xs font-black uppercase tracking-[0.2em] text-white/90">Studio 01 • BROADCASTING</span>
               {isPausedForUpload && (
                 <span className="text-xs font-black uppercase tracking-[0.2em] text-yellow-400 animate-pulse">⏸ PAUSED FOR UPLOAD</span>
@@ -657,7 +657,7 @@ https://monumento.app
                 <div className="absolute inset-0 z-0 opacity-20 blur-xl scale-110">
                   <img src={STUDIO_AVATARS[vibe!]} className="w-full h-full object-cover" alt="" />
                 </div>
-                <div className="relative z-10 w-full max-w-sm aspect-square rounded-full overflow-hidden border-4 border-white/10 shadow-[0_0_80px_rgba(0,0,0,1)] ring-1 ring-white/20 transition-all duration-500 transform">
+                <div className="relative z-10 w-full max-w-sm aspect-square rounded-2xl overflow-hidden border-4 border-white/10 shadow-[0_0_80px_rgba(0,0,0,1)] ring-1 ring-white/20 transition-all duration-500 transform">
                   <img src={STUDIO_AVATARS[vibe!]} className="w-full h-full object-cover" alt="" />
                   <video src={STUDIO_VIDEO_PREVIEWS[vibe!]} className={`absolute inset-0 w-full h-full object-cover z-20 transition-opacity duration-300 ${isHostTalking ? 'opacity-30' : 'opacity-0'}`} autoPlay loop muted playsInline />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -667,7 +667,7 @@ https://monumento.app
                   <h2 className="text-4xl font-black uppercase tracking-tighter text-white/90">{vibe}</h2>
                   <div className="flex justify-center gap-1.5 h-6 items-end mt-4">
                     {[...Array(8)].map((_, i) => (
-                      <div key={i} className={`w-1 rounded-full transition-all duration-75 bg-purple-500 ${isHostTalking ? 'animate-bounce' : 'h-1 opacity-20'}`} style={{ height: isHostTalking ? `${30 + Math.random() * 70}%` : '4px', animationDelay: `${i * 0.05}s` }} />
+                      <div key={i} className={`w-1 rounded-2xl transition-all duration-75 bg-purple-500 ${isHostTalking ? 'animate-bounce' : 'h-1 opacity-20'}`} style={{ height: isHostTalking ? `${30 + Math.random() * 70}%` : '4px', animationDelay: `${i * 0.05}s` }} />
                     ))}
                   </div>
                 </div>
@@ -689,7 +689,7 @@ https://monumento.app
 
               {/* SIDE-BY-SIDE: GUEST (RIGHT) */}
               <div className="col-span-4 relative bg-[#0a0a0a] flex flex-col items-center justify-center p-12 overflow-hidden">
-                <div className="relative z-10 w-full max-w-sm aspect-square rounded-full overflow-hidden border-4 border-white/10 shadow-[0_0_80px_rgba(0,0,0,1)] ring-1 ring-white/20 bg-black">
+                <div className="relative z-10 w-full max-w-sm aspect-square rounded-2xl overflow-hidden border-4 border-white/10 shadow-[0_0_80px_rgba(0,0,0,1)] ring-1 ring-white/20 bg-black">
                   <VirtualStudio vibe={vibe!} customBackground={null} active={true} stream={sharedStreamRef.current} onFrame={(f) => sessionRef.current?.sendImageFrame(f)} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
                 </div>
@@ -698,7 +698,7 @@ https://monumento.app
                   <h2 className="text-4xl font-black uppercase tracking-tighter text-white/90">The Guest</h2>
                   <div className="flex justify-center gap-1.5 h-6 items-end mt-4">
                     {[...Array(8)].map((_, i) => (
-                      <div key={i} className={`w-1 rounded-full transition-all duration-75 bg-emerald-500 ${isGuestTalking ? 'animate-bounce' : 'h-1 opacity-20'}`} style={{ height: isGuestTalking ? `${30 + Math.random() * 70}%` : '4px', animationDelay: `${i * 0.05}s` }} />
+                      <div key={i} className={`w-1 rounded-2xl transition-all duration-75 bg-emerald-500 ${isGuestTalking ? 'animate-bounce' : 'h-1 opacity-20'}`} style={{ height: isGuestTalking ? `${30 + Math.random() * 70}%` : '4px', animationDelay: `${i * 0.05}s` }} />
                     ))}
                   </div>
                 </div>
@@ -708,35 +708,67 @@ https://monumento.app
 
           {/* CONTENT SHARED LAYOUT: Content dominant with PiP speakers */}
           {(currentLayout.mode === 'CONTENT_SHARED' || currentLayout.mode === 'SCREEN_SHARE') && sharedContent && (
-            <div className="col-span-12 relative bg-black flex items-center justify-center p-12 animate-in fade-in duration-300">
-              {/* Shared Content Display */}
-              <div className="w-full h-full flex items-center justify-center">
+            <div className="col-span-12 relative bg-black flex items-center justify-center p-8 animate-in fade-in duration-300">
+              {/* Shared Content Display - taking full available space minus PiP */}
+              <div className="w-full h-full flex items-center justify-center pr-56">
                 {sharedContent.type === 'image' && (
-                  <img src={sharedContent.url} alt={sharedContent.file.name} className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" />
+                  <div className="w-full h-full flex items-center justify-center p-4">
+                    <img
+                      src={sharedContent.url}
+                      alt={sharedContent.file.name}
+                      className="w-auto h-auto max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+                      style={{ maxWidth: '100%', maxHeight: '100%' }}
+                    />
+                  </div>
                 )}
                 {sharedContent.type === 'video' && (
-                  <video src={sharedContent.url} controls autoPlay className="max-w-full max-h-full rounded-2xl shadow-2xl" />
+                  <div className="w-full h-full flex items-center justify-center p-4">
+                    <video
+                      src={sharedContent.url}
+                      controls
+                      autoPlay
+                      className="w-auto h-auto max-w-full max-h-full rounded-2xl shadow-2xl"
+                      style={{ maxWidth: '90%', maxHeight: '90%', minWidth: '600px', minHeight: '400px' }}
+                    />
+                  </div>
                 )}
                 {sharedContent.type === 'audio' && (
                   <div className="bg-gradient-to-br from-purple-900/40 to-emerald-900/40 p-16 rounded-3xl border border-white/10 shadow-2xl">
                     <div className="text-center space-y-6">
-                      <div className="w-24 h-24 mx-auto rounded-full bg-purple-600/20 border-4 border-purple-500/40 flex items-center justify-center">
+                      <div className="w-24 h-24 mx-auto rounded-2xl bg-purple-600/20 border-4 border-purple-500/40 flex items-center justify-center">
                         <span className="text-6xl">🎵</span>
                       </div>
                       <h3 className="text-2xl font-black text-white/90">{sharedContent.file.name}</h3>
-                      <audio src={sharedContent.url} controls className="mt-6 w-96" />
+                      <audio src={sharedContent.url} controls className="mt-6 w-full max-w-2xl" />
                     </div>
                   </div>
                 )}
                 {sharedContent.type === 'document' && (
-                  <div className="bg-gradient-to-br from-emerald-900/40 to-blue-900/40 p-16 rounded-3xl border border-white/10 shadow-2xl">
-                    <div className="text-center space-y-6">
-                      <div className="w-32 h-40 mx-auto rounded-2xl bg-white flex items-center justify-center border-4 border-white/20 shadow-xl">
-                        <span className="text-8xl">📄</span>
+                  <div className="w-full h-full flex items-center justify-center p-4">
+                    {sharedContent.file.type === 'application/pdf' ? (
+                      <iframe
+                        src={sharedContent.url}
+                        className="w-full h-full rounded-2xl border-4 border-white/10 shadow-2xl bg-white"
+                        title={sharedContent.file.name}
+                      />
+                    ) : (
+                      <div className="bg-gradient-to-br from-emerald-900/40 to-blue-900/40 p-16 rounded-3xl border border-white/10 shadow-2xl max-w-2xl">
+                        <div className="text-center space-y-6">
+                          <div className="w-32 h-40 mx-auto rounded-2xl bg-white flex items-center justify-center border-4 border-white/20 shadow-xl">
+                            <span className="text-8xl">📄</span>
+                          </div>
+                          <h3 className="text-2xl font-black text-white/90">{sharedContent.file.name}</h3>
+                          <p className="text-sm text-white/60">Document viewer for this format coming soon</p>
+                          <a
+                            href={sharedContent.url}
+                            download={sharedContent.file.name}
+                            className="inline-block px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                          >
+                            Download Document
+                          </a>
+                        </div>
                       </div>
-                      <h3 className="text-2xl font-black text-white/90">{sharedContent.file.name}</h3>
-                      <p className="text-sm text-white/60">Document preview</p>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -786,7 +818,7 @@ https://monumento.app
     );
   }
 
-  if (view === 'PRODUCING') return <div className="min-h-screen bg-black flex items-center justify-center p-6 text-white"><div className="max-w-md w-full glass-panel p-12 rounded-3xl text-center space-y-8"><h1 className="text-2xl font-black uppercase tracking-widest">Mastering Export</h1><div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden"><div className="h-full bg-purple-600 transition-all" style={{ width: `${productionProgress}%` }} /></div><div className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest animate-pulse">{productionStep}</div>{productionProgress === 100 && <button onClick={() => setView('HISTORY')} className="w-full py-4 bg-emerald-600 rounded-xl font-black uppercase tracking-widest text-[10px]">View Archives</button>}</div></div>;
+  if (view === 'PRODUCING') return <div className="min-h-screen bg-black flex items-center justify-center p-6 text-white"><div className="max-w-md w-full glass-panel p-12 rounded-3xl text-center space-y-8"><h1 className="text-2xl font-black uppercase tracking-widest">Mastering Export</h1><div className="h-1.5 w-full bg-white/5 rounded-2xl overflow-hidden"><div className="h-full bg-purple-600 transition-all" style={{ width: `${productionProgress}%` }} /></div><div className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest animate-pulse">{productionStep}</div>{productionProgress === 100 && <button onClick={() => setView('HISTORY')} className="w-full py-4 bg-emerald-600 rounded-xl font-black uppercase tracking-widest text-[10px]">View Archives</button>}</div></div>;
   if (view === 'HISTORY') return <HistoryView sessions={history} onSelect={(s) => { setSelectedSession(s); setView('SESSION_DETAIL'); }} onBack={() => setView('SETUP')} onDeleteAll={() => setHistory([])} onDeleteSingle={(id) => setHistory(h => h.filter(s => s.id !== id))} />;
   if (view === 'SESSION_DETAIL' && selectedSession) return <SessionDetail session={selectedSession} onBack={() => setView('HISTORY')} onUpdate={(u) => setHistory(h => h.map(s => s.id === u.id ? u : s))} onDelete={(id) => { setHistory(h => h.filter(s => s.id !== id)); setView('HISTORY'); }} />;
 
@@ -797,7 +829,7 @@ https://monumento.app
         <div className="absolute top-8 right-8 z-50">
           <button
             onClick={logout}
-            className="px-6 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
+            className="px-6 py-2 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
           >
             <span className="text-white/60">{user.email}</span>
             <span className="text-white/40">•</span>
@@ -822,7 +854,7 @@ https://monumento.app
               <p className="text-white/30 text-[10px] font-black uppercase tracking-widest">Custom Topics Control</p>
             </button>
           </div>
-          <button onClick={() => setView('HISTORY')} className="px-12 py-4 bg-white/5 border border-white/10 rounded-full text-[11px] font-black uppercase tracking-[0.3em] mx-auto block hover:bg-white/10 transition-all">Archives</button>
+          <button onClick={() => setView('HISTORY')} className="px-12 py-4 bg-white/5 border border-white/10 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] mx-auto block hover:bg-white/10 transition-all">Archives</button>
         </div>
       ) : (
         <div className="w-full max-w-6xl space-y-16 py-20 flex flex-col">
@@ -899,8 +931,8 @@ https://monumento.app
                   <div className="flex-1 space-y-3">
                     <div className="flex items-center gap-3">
                       <h4 className="text-lg font-black uppercase tracking-tight group-hover:text-blue-400 transition-colors">Animate Host Avatar</h4>
-                      <span className="px-3 py-1 bg-blue-600/20 border border-blue-500/30 rounded-full text-[9px] font-black uppercase tracking-widest text-blue-400">AI-Powered</span>
-                      {animateAvatar && <span className="px-3 py-1 bg-green-600/20 border border-green-500/30 rounded-full text-[9px] font-black uppercase tracking-widest text-green-400">Enabled</span>}
+                      <span className="px-3 py-1 bg-blue-600/20 border border-blue-500/30 rounded-2xl text-[9px] font-black uppercase tracking-widest text-blue-400">AI-Powered</span>
+                      {animateAvatar && <span className="px-3 py-1 bg-green-600/20 border border-green-500/30 rounded-2xl text-[9px] font-black uppercase tracking-widest text-green-400">Enabled</span>}
                     </div>
                     <p className="text-sm text-white/60 leading-relaxed">
                       Generate lifelike host videos with realistic facial expressions, lip-sync, and head movements using SadTalker AI.
