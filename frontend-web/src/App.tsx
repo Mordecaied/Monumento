@@ -663,32 +663,26 @@ const App: React.FC = () => {
 
           {/* CONTENT SHARED LAYOUT: Content dominant with PiP speakers */}
           {(currentLayout.mode === 'CONTENT_SHARED' || currentLayout.mode === 'SCREEN_SHARE') && sharedContent && (
-            <div className="col-span-12 relative bg-black flex items-center justify-center p-8 animate-in fade-in duration-300">
-              {/* Shared Content Display - taking full available space minus PiP */}
-              <div className="w-full h-full flex items-center justify-center pr-56">
+            <div className="col-span-12 relative bg-black flex items-center justify-center overflow-hidden animate-in fade-in duration-300">
+              {/* Shared Content Display - centered, constrained to viewport */}
+              <div className="absolute inset-0 flex items-center justify-center p-24">
                 {sharedContent.type === 'image' && (
-                  <div className="w-full h-full flex items-center justify-center p-4">
-                    <img
-                      src={sharedContent.url}
-                      alt={sharedContent.file.name}
-                      className="w-auto h-auto max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
-                      style={{ maxWidth: '100%', maxHeight: '100%' }}
-                    />
-                  </div>
+                  <img
+                    src={sharedContent.url}
+                    alt={sharedContent.file.name}
+                    className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+                  />
                 )}
                 {sharedContent.type === 'video' && (
-                  <div className="w-full h-full flex items-center justify-center p-4">
-                    <video
-                      src={sharedContent.url}
-                      controls
-                      autoPlay
-                      className="w-auto h-auto max-w-full max-h-full rounded-2xl shadow-2xl"
-                      style={{ maxWidth: '90%', maxHeight: '90%', minWidth: '600px', minHeight: '400px' }}
-                    />
-                  </div>
+                  <video
+                    src={sharedContent.url}
+                    controls
+                    autoPlay
+                    className="max-w-[85%] max-h-[85%] w-auto h-auto rounded-2xl shadow-2xl bg-black"
+                  />
                 )}
                 {sharedContent.type === 'audio' && (
-                  <div className="bg-gradient-to-br from-purple-900/40 to-emerald-900/40 p-16 rounded-3xl border border-white/10 shadow-2xl">
+                  <div className="bg-gradient-to-br from-purple-900/40 to-emerald-900/40 p-16 rounded-3xl border border-white/10 shadow-2xl max-w-2xl">
                     <div className="text-center space-y-6">
                       <div className="w-24 h-24 mx-auto rounded-2xl bg-purple-600/20 border-4 border-purple-500/40 flex items-center justify-center">
                         <span className="text-6xl">🎵</span>
@@ -699,11 +693,11 @@ const App: React.FC = () => {
                   </div>
                 )}
                 {sharedContent.type === 'document' && (
-                  <div className="w-full h-full flex items-center justify-center p-4">
+                  <>
                     {sharedContent.file.type === 'application/pdf' ? (
                       <iframe
                         src={sharedContent.url}
-                        className="w-full h-full rounded-2xl border-4 border-white/10 shadow-2xl bg-white"
+                        className="w-[85%] h-[85%] rounded-2xl border-4 border-white/10 shadow-2xl bg-white"
                         title={sharedContent.file.name}
                       />
                     ) : (
@@ -724,31 +718,21 @@ const App: React.FC = () => {
                         </div>
                       </div>
                     )}
-                  </div>
+                  </>
                 )}
               </div>
 
-              {/* Close button */}
+              {/* Close button - top right */}
               <button
                 onClick={handleCloseContent}
-                className="absolute top-8 right-8 px-6 py-3 bg-red-600 hover:bg-red-500 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-xl z-40"
+                className="absolute top-8 right-8 px-6 py-3 bg-red-600 hover:bg-red-500 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-xl z-50"
               >
                 Close Content
               </button>
 
-              {/* PiP: Guest (Bottom Left) */}
-              <div className="absolute bottom-6 left-6 w-40 h-40 rounded-xl overflow-hidden border-2 border-emerald-500/40 shadow-2xl z-30 bg-black">
-                <VirtualStudio vibe={vibe!} customBackground={null} active={true} stream={sharedStreamRef.current} onFrame={(f) => sessionRef.current?.sendImageFrame(f)} />
-                {isGuestTalking && (
-                  <div className="absolute inset-0 border-4 border-emerald-400 rounded-xl pointer-events-none animate-pulse" />
-                )}
-                <div className="absolute bottom-2 left-2 text-[8px] font-black uppercase tracking-wider text-emerald-400 bg-black/60 px-2 py-1 rounded">
-                  Guest
-                </div>
-              </div>
-
-              {/* PiP: Host (Bottom Left, above guest) */}
-              <div className="absolute bottom-56 left-6 w-40 h-40 rounded-xl overflow-hidden border-2 border-purple-500/40 shadow-2xl z-30 bg-[#0a0a0a]">
+              {/* PiP Windows - Stacked vertically on top right, below close button */}
+              {/* PiP: Host (Top Right, below close button) */}
+              <div className="absolute top-24 right-8 w-48 h-48 rounded-xl overflow-hidden border-2 border-purple-500/40 shadow-2xl z-40 bg-[#0a0a0a]">
                 <div className="w-full h-full flex items-center justify-center">
                   <img src={STUDIO_AVATARS[vibe!]} className="w-full h-full object-cover" alt="" />
                   <video src={STUDIO_VIDEO_PREVIEWS[vibe!]} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isHostTalking ? 'opacity-30' : 'opacity-0'}`} autoPlay loop muted playsInline />
@@ -756,8 +740,19 @@ const App: React.FC = () => {
                 {isHostTalking && (
                   <div className="absolute inset-0 border-4 border-purple-400 rounded-xl pointer-events-none animate-pulse" />
                 )}
-                <div className="absolute bottom-2 left-2 text-[8px] font-black uppercase tracking-wider text-purple-400 bg-black/60 px-2 py-1 rounded">
+                <div className="absolute bottom-2 left-2 text-[10px] font-black uppercase tracking-wider text-purple-400 bg-black/80 px-3 py-1.5 rounded">
                   Host
+                </div>
+              </div>
+
+              {/* PiP: Guest (Below Host) */}
+              <div className="absolute top-[22rem] right-8 w-48 h-48 rounded-xl overflow-hidden border-2 border-emerald-500/40 shadow-2xl z-40 bg-black">
+                <VirtualStudio vibe={vibe!} customBackground={null} active={true} stream={sharedStreamRef.current} onFrame={(f) => sessionRef.current?.sendImageFrame(f)} />
+                {isGuestTalking && (
+                  <div className="absolute inset-0 border-4 border-emerald-400 rounded-xl pointer-events-none animate-pulse" />
+                )}
+                <div className="absolute bottom-2 left-2 text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-black/80 px-3 py-1.5 rounded">
+                  Guest
                 </div>
               </div>
             </div>
