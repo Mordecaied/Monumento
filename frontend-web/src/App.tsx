@@ -664,62 +664,68 @@ const App: React.FC = () => {
           {/* CONTENT SHARED LAYOUT: Content dominant with PiP speakers */}
           {(currentLayout.mode === 'CONTENT_SHARED' || currentLayout.mode === 'SCREEN_SHARE') && sharedContent && (
             <div className="col-span-12 relative bg-black flex items-center justify-center overflow-hidden animate-in fade-in duration-300">
-              {/* Shared Content Display - centered, constrained to viewport */}
-              <div className="absolute inset-0 flex items-center justify-center p-24">
-                {sharedContent.type === 'image' && (
-                  <img
-                    src={sharedContent.url}
-                    alt={sharedContent.file.name}
-                    className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
-                  />
-                )}
-                {sharedContent.type === 'video' && (
-                  <video
-                    src={sharedContent.url}
-                    controls
-                    autoPlay
-                    className="max-w-[85%] max-h-[85%] w-auto h-auto rounded-2xl shadow-2xl bg-black"
-                  />
-                )}
-                {sharedContent.type === 'audio' && (
-                  <div className="bg-gradient-to-br from-purple-900/40 to-emerald-900/40 p-16 rounded-3xl border border-white/10 shadow-2xl max-w-2xl">
-                    <div className="text-center space-y-6">
-                      <div className="w-24 h-24 mx-auto rounded-2xl bg-purple-600/20 border-4 border-purple-500/40 flex items-center justify-center">
-                        <span className="text-6xl">🎵</span>
-                      </div>
-                      <h3 className="text-2xl font-black text-white/90">{sharedContent.file.name}</h3>
-                      <audio src={sharedContent.url} controls className="mt-6 w-full max-w-2xl" />
-                    </div>
-                  </div>
-                )}
-                {sharedContent.type === 'document' && (
-                  <>
-                    {sharedContent.file.type === 'application/pdf' ? (
-                      <iframe
-                        src={sharedContent.url}
-                        className="w-[85%] h-[85%] rounded-2xl border-4 border-white/10 shadow-2xl bg-white"
-                        title={sharedContent.file.name}
-                      />
-                    ) : (
-                      <div className="bg-gradient-to-br from-emerald-900/40 to-blue-900/40 p-16 rounded-3xl border border-white/10 shadow-2xl max-w-2xl">
+              {/* Shared Content Display - centered, standardized size for all types */}
+              <div className="absolute inset-0 flex items-center justify-center p-12">
+                <div className="w-full max-w-4xl aspect-video flex items-center justify-center">
+                  {sharedContent.type === 'image' && (
+                    <img
+                      src={sharedContent.url}
+                      alt={sharedContent.file.name}
+                      className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+                    />
+                  )}
+                  {sharedContent.type === 'video' && (
+                    <video
+                      src={sharedContent.url}
+                      controls
+                      autoPlay
+                      className="w-full h-full rounded-2xl shadow-2xl bg-black"
+                    />
+                  )}
+                  {sharedContent.type === 'audio' && (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="bg-gradient-to-br from-purple-900/40 to-emerald-900/40 p-16 rounded-3xl border border-white/10 shadow-2xl">
                         <div className="text-center space-y-6">
-                          <div className="w-32 h-40 mx-auto rounded-2xl bg-white flex items-center justify-center border-4 border-white/20 shadow-xl">
-                            <span className="text-8xl">📄</span>
+                          <div className="w-24 h-24 mx-auto rounded-2xl bg-purple-600/20 border-4 border-purple-500/40 flex items-center justify-center">
+                            <span className="text-6xl">🎵</span>
                           </div>
                           <h3 className="text-2xl font-black text-white/90">{sharedContent.file.name}</h3>
-                          <p className="text-sm text-white/60">Document viewer for this format coming soon</p>
-                          <a
-                            href={sharedContent.url}
-                            download={sharedContent.file.name}
-                            className="inline-block px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
-                          >
-                            Download Document
-                          </a>
+                          <audio src={sharedContent.url} controls className="mt-6 w-full max-w-2xl" />
                         </div>
                       </div>
-                    )}
-                  </>
-                )}
+                    </div>
+                  )}
+                  {sharedContent.type === 'document' && (
+                    <>
+                      {sharedContent.file.type === 'application/pdf' ? (
+                        <iframe
+                          src={sharedContent.url}
+                          className="w-full h-full rounded-2xl border-4 border-white/10 shadow-2xl bg-white"
+                          title={sharedContent.file.name}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="bg-gradient-to-br from-emerald-900/40 to-blue-900/40 p-16 rounded-3xl border border-white/10 shadow-2xl">
+                            <div className="text-center space-y-6">
+                              <div className="w-32 h-40 mx-auto rounded-2xl bg-white flex items-center justify-center border-4 border-white/20 shadow-xl">
+                                <span className="text-8xl">📄</span>
+                              </div>
+                              <h3 className="text-2xl font-black text-white/90">{sharedContent.file.name}</h3>
+                              <p className="text-sm text-white/60">Document viewer for this format coming soon</p>
+                              <a
+                                href={sharedContent.url}
+                                download={sharedContent.file.name}
+                                className="inline-block px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                              >
+                                Download Document
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Close button - top right */}
@@ -730,9 +736,9 @@ const App: React.FC = () => {
                 Close Content
               </button>
 
-              {/* PiP Windows - Stacked vertically on top right, below close button */}
-              {/* PiP: Host (Top Right, below close button) */}
-              <div className="absolute top-24 right-8 w-48 h-48 rounded-xl overflow-hidden border-2 border-purple-500/40 shadow-2xl z-40 bg-[#0a0a0a]">
+              {/* PiP Windows - Stacked vertically on LEFT side for better UX */}
+              {/* PiP: Host (Top Left) */}
+              <div className="absolute top-8 left-8 w-48 h-48 rounded-xl overflow-hidden border-2 border-purple-500/40 shadow-2xl z-40 bg-[#0a0a0a]">
                 <div className="w-full h-full flex items-center justify-center">
                   <img src={STUDIO_AVATARS[vibe!]} className="w-full h-full object-cover" alt="" />
                   <video src={STUDIO_VIDEO_PREVIEWS[vibe!]} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isHostTalking ? 'opacity-30' : 'opacity-0'}`} autoPlay loop muted playsInline />
@@ -745,8 +751,8 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* PiP: Guest (Below Host) */}
-              <div className="absolute top-[22rem] right-8 w-48 h-48 rounded-xl overflow-hidden border-2 border-emerald-500/40 shadow-2xl z-40 bg-black">
+              {/* PiP: Guest (Below Host on left) */}
+              <div className="absolute top-60 left-8 w-48 h-48 rounded-xl overflow-hidden border-2 border-emerald-500/40 shadow-2xl z-40 bg-black">
                 <VirtualStudio vibe={vibe!} customBackground={null} active={true} stream={sharedStreamRef.current} onFrame={(f) => sessionRef.current?.sendImageFrame(f)} />
                 {isGuestTalking && (
                   <div className="absolute inset-0 border-4 border-emerald-400 rounded-xl pointer-events-none animate-pulse" />

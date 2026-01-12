@@ -364,8 +364,8 @@ const SessionDetail: React.FC<SessionDetailProps> = ({ session, onBack, onUpdate
            </header>
            
            <div className="flex-1 w-full flex flex-col items-center justify-center px-12 pb-12 relative overflow-hidden">
-              {/* MIXED VIDEO PREVIEW: Toggles between Host and Guest based on activeRole - YouTube 16:9 style */}
-              <div className="w-full max-w-6xl aspect-video relative rounded-2xl overflow-hidden bg-black shadow-[0_20px_60px_rgba(0,0,0,0.8)] border border-white/10 group">
+              {/* MIXED VIDEO PREVIEW: YouTube 16:9 standard width */}
+              <div className="w-full max-w-4xl aspect-video relative rounded-2xl overflow-hidden bg-black shadow-[0_20px_60px_rgba(0,0,0,0.8)] border border-white/10 group">
                  <div className="absolute inset-0 z-0">
                     {/* HOST VIEW */}
                     <div className={`absolute inset-0 transition-all duration-200 ${activeRole === 'ai' ? 'opacity-100 scale-100' : 'opacity-0 scale-105 pointer-events-none'}`}>
@@ -431,22 +431,17 @@ const SessionDetail: React.FC<SessionDetailProps> = ({ session, onBack, onUpdate
                     </div>
                  </div>
 
-                 {/* US-014: ULTRA-LARGE SUBTITLES with emerald-400 green highlighting */}
-                 <div className="absolute bottom-20 inset-x-0 px-20 text-center z-20 pointer-events-none">
-                    <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 max-w-6xl mx-auto">
+                 {/* Subtitles - Bottom positioned, smaller size */}
+                 <div className="absolute bottom-8 inset-x-0 px-8 text-center z-20 pointer-events-none">
+                    <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 max-w-4xl mx-auto bg-black/60 backdrop-blur-sm px-6 py-3 rounded-2xl">
                        {(activeSentence || "").split(/\s+/).map((word, idx) => (
                           <span
                             key={idx}
-                            className={`text-9xl font-black tracking-tighter transition-all duration-200 ${
+                            className={`text-2xl font-bold tracking-tight transition-all duration-200 ${
                               idx === replayWordIdx
-                                ? 'text-emerald-400 scale-110 drop-shadow-[0_0_60px_rgba(52,211,153,1)] animate-pulse'
-                                : 'text-white/15 drop-shadow-[0_10px_30px_rgba(0,0,0,0.9)]'
+                                ? 'text-emerald-400 scale-105'
+                                : 'text-white/70'
                             }`}
-                            style={{
-                              textShadow: idx === replayWordIdx
-                                ? '0 0 80px rgba(52,211,153,0.8), 0 0 120px rgba(52,211,153,0.6), 0 20px 40px rgba(0,0,0,0.9)'
-                                : '0 20px 40px rgba(0,0,0,0.9)'
-                            }}
                           >
                              {word}
                           </span>
