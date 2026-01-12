@@ -77,6 +77,7 @@ const App: React.FC = () => {
   const videoChunksRef = useRef<Blob[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const sharedStreamRef = useRef<MediaStream | null>(null);
+  const [guestStream, setGuestStream] = useState<MediaStream | null>(null);
   const volumeAnalysersRef = useRef<{ host: AnalyserNode | null; guest: AnalyserNode | null }>({ host: null, guest: null });
   const volumeRequestRef = useRef<number | null>(null);
 
@@ -292,10 +293,11 @@ const App: React.FC = () => {
   const handleStartInterview = useCallback(async () => {
     if (!vibe || !selectedTier) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true }, video: { width: 1280, height: 720 }
       });
       sharedStreamRef.current = stream;
+      setGuestStream(stream);
       setView('COUNTDOWN');
       setCountdown(3);
       setMessages([]);
@@ -321,6 +323,7 @@ const App: React.FC = () => {
     if (volumeRequestRef.current) cancelAnimationFrame(volumeRequestRef.current);
     mediaRecorderRef.current?.stop();
     sharedStreamRef.current?.getTracks().forEach(t => t.stop());
+    setGuestStream(null);
     setIsInterviewing(false);
     setView('PRODUCING');
     setProductionProgress(0);
@@ -645,7 +648,7 @@ const App: React.FC = () => {
               {/* SIDE-BY-SIDE: GUEST (RIGHT) */}
               <div className="col-span-4 relative bg-[#0a0a0a] flex flex-col items-center justify-center p-12 overflow-hidden">
                 <div className="relative z-10 w-full max-w-sm aspect-square rounded-2xl overflow-hidden border-4 border-white/10 shadow-[0_0_80px_rgba(0,0,0,1)] ring-1 ring-white/20 bg-black">
-                  <VirtualStudio vibe={vibe!} customBackground={null} active={true} stream={sharedStreamRef.current} onFrame={(f) => sessionRef.current?.sendImageFrame(f)} />
+                  <VirtualStudio vibe={vibe!} customBackground={null} active={true} stream={guestStream} onFrame={(f) => sessionRef.current?.sendImageFrame(f)} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
                 </div>
                 <div className="mt-10 text-center space-y-2 relative z-10">
@@ -679,6 +682,8 @@ const App: React.FC = () => {
                       src={sharedContent.url}
                       controls
                       autoPlay
+                      playsInline
+                      muted
                       className="w-full h-full rounded-2xl shadow-2xl bg-black"
                     />
                   )}
@@ -753,7 +758,7 @@ const App: React.FC = () => {
 
               {/* PiP: Guest (Below Host on left) */}
               <div className="absolute top-60 left-8 w-48 h-48 rounded-xl overflow-hidden border-2 border-emerald-500/40 shadow-2xl z-40 bg-black">
-                <VirtualStudio vibe={vibe!} customBackground={null} active={true} stream={sharedStreamRef.current} onFrame={(f) => sessionRef.current?.sendImageFrame(f)} />
+                <VirtualStudio vibe={vibe!} customBackground={null} active={true} stream={guestStream} onFrame={(f) => sessionRef.current?.sendImageFrame(f)} />
                 {isGuestTalking && (
                   <div className="absolute inset-0 border-4 border-emerald-400 rounded-xl pointer-events-none animate-pulse" />
                 )}
